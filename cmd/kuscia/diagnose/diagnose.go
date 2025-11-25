@@ -138,7 +138,7 @@ func RunToolCommand(ctx context.Context, config *mods.DiagnoseConfig) error {
 	reporter := util.NewReporter(config.ReportFile)
 	defer func() {
 		reporter.Render()
-		reporter.Close()
+		_ = reporter.Close()
 	}()
 	kusciaAPIConn, err := client.NewKusciaAPIConn()
 	if err != nil {
@@ -170,7 +170,7 @@ func RunEnvoyLogCommand(ctx context.Context, taskID string) error {
 	reporter := util.NewReporter("")
 	defer func() {
 		reporter.Render()
-		reporter.Close()
+		_ = reporter.Close()
 	}()
 	return mods.NewEnvoyLogTaskAnalysis(reporter, taskID, kusciaConf.DomainID, "", "", kusciaConf.RunMode).TaskAnalysis(ctx)
 }

@@ -145,7 +145,7 @@ func (d *IOServer) DoPut(stream flight.FlightService_DoPutServer) (err error) {
 	reqContext, ok := d.cmds.Get(ticketID)
 	if !ok || reqContext == nil {
 		nlog.Warnf("[DataMesh] [DoPut] invalidate input ticket=%s", ticketID)
-		return status.Errorf(codes.InvalidArgument, fmt.Sprintf("invalid ticket:%s", ticketID))
+		return status.Errorf(codes.InvalidArgument, "invalid ticket:%s", ticketID)
 	}
 	reqCtx := reqContext.(*utils.DataMeshRequestContext)
 	if ios, ok := d.ioChannels[reqCtx.DataSourceType]; ok {

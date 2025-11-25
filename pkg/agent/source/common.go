@@ -56,10 +56,10 @@ func applyDefaults(pod *api.Pod, source string, isFile bool, nodeName types.Node
 		// DeepHashObject resets the hash, so we should write the pod source
 		// information AFTER it.
 		if isFile {
-			fmt.Fprintf(hasher, "host:%s", nodeName)
-			fmt.Fprintf(hasher, "file:%s", source)
+			_, _ = fmt.Fprintf(hasher, "host:%s", nodeName)
+			_, _ = fmt.Fprintf(hasher, "file:%s", source)
 		} else {
-			fmt.Fprintf(hasher, "url:%s", source)
+			_, _ = fmt.Fprintf(hasher, "url:%s", source)
 		}
 		pod.UID = types.UID(hex.EncodeToString(hasher.Sum(nil)[0:]))
 	}

@@ -262,18 +262,13 @@ func (c *Controller) updateHostTaskSummaryByTaskResource(ctx context.Context, ta
 		return fmt.Errorf("host %v resource accessor has not synced, retry", initiator)
 	}
 
-	hTaskSummary, err := hra.HostTaskSummaryLister().KusciaTaskSummaries(masterDomainID).Get(taskID)
+	hTaskSummary, err := hra.HostKusciaClient().KusciaV1alpha1().KusciaTaskSummaries(masterDomainID).Get(ctx, taskID, metav1.GetOptions{})
 	if err != nil {
+		nlog.Errorf("Failed to get taskSummary %v under host %v cluster, %v", taskID, initiator, err)
 		if k8serrors.IsNotFound(err) {
-			hTaskSummary, err = hra.HostKusciaClient().KusciaV1alpha1().KusciaTaskSummaries(masterDomainID).Get(ctx, taskID, metav1.GetOptions{})
+			return nil
 		}
-		if err != nil {
-			nlog.Errorf("Failed to get taskSummary %v under host %v cluster, %v", taskID, initiator, err)
-			if k8serrors.IsNotFound(err) {
-				return nil
-			}
-			return err
-		}
+		return err
 	}
 
 	updated := false

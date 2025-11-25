@@ -388,7 +388,9 @@ func (kp *K8sProvider) SyncPod(ctx context.Context, pod *v1.Pod, podStatus *pkgc
 		newPod.Annotations[k] = v
 	}
 	// add affinities
-	newPod.Spec.Affinity = kp.affinitiesToAdd
+	if kp.affinitiesToAdd != nil && (kp.affinitiesToAdd.NodeAffinity != nil || kp.affinitiesToAdd.PodAffinity != nil || kp.affinitiesToAdd.PodAntiAffinity != nil) {
+		newPod.Spec.Affinity = kp.affinitiesToAdd
+	}
 
 	// allow backend plugin to customize setting
 	kp.backendPlugin.PreSyncPod(newPod)

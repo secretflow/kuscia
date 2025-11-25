@@ -22,6 +22,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"os"
 	"time"
@@ -89,7 +90,23 @@ func NewKusciaAPI(d *ModuleRuntimeConfigs) (Module, error) {
 	}
 
 	if kusciaAPIConfig.TLS != nil {
-		if err := kusciaAPIConfig.TLS.LoadFromDataOrFile(nil, []string{kusciaAPISanDNSName}); err != nil {
+		// Use configured SANs, fallback to default values if not configured
+		var ipList []string
+		dnsList := []string{kusciaAPISanDNSName}
+
+		// Parse user configured SANs
+		if len(kusciaAPIConfig.SANs) > 0 {
+			for _, san := range kusciaAPIConfig.SANs {
+				// Determine whether it's IP address or domain name
+				if net.ParseIP(san) != nil {
+					ipList = append(ipList, san)
+				} else {
+					dnsList = append(dnsList, san)
+				}
+			}
+		}
+
+		if err := kusciaAPIConfig.TLS.LoadFromDataOrFile(ipList, dnsList); err != nil {
 			return nil, err
 		}
 	}

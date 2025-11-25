@@ -350,6 +350,9 @@ func DefaultStaticAgentConfig() *AgentConfig {
 			{
 				Name: common.PluginNameConfigRender,
 			},
+			{
+				Name: common.PluginNameBandwidthFilter,
+			},
 		},
 	}
 }

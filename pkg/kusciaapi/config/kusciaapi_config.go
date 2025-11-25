@@ -39,6 +39,7 @@ type KusciaAPIConfig struct {
 	Initiator        string                    `yaml:"initiator,omitempty"`
 	Protocol         common.Protocol           `yaml:"protocol"`
 	Token            *TokenConfig              `yaml:"token"`
+	SANs             []string                  `yaml:"-"`
 	WriteTimeout     int                       `yaml:"-"`
 	TLS              *config.TLSServerConfig   `yaml:"-"`
 	DomainKey        *rsa.PrivateKey           `yaml:"-"`

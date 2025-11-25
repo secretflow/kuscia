@@ -30,14 +30,33 @@ import (
 )
 
 func NewControllersModule(i *ModuleRuntimeConfigs) (Module, error) {
+	// Parse garbage collection configuration
+	kddGcEnabled := false
+	gcDurationHours := 0
+	kjGcDurationHours := 0
+	// If Enable is nil (not set in config), kddGcEnabled remains false (default value)
+	// If Enable is false, kddGcEnabled will be set to false
+	// If Enable is true, kddGcEnabled will be set to true
+	if i.GarbageCollection.KusciaDomainDataGC.Enable != nil {
+		kddGcEnabled = *i.GarbageCollection.KusciaDomainDataGC.Enable
+		if kddGcEnabled && i.GarbageCollection.KusciaDomainDataGC.DurationHours > 0 {
+			gcDurationHours = i.GarbageCollection.KusciaDomainDataGC.DurationHours
+		}
+	}
+	if i.GarbageCollection.KusciaJobGC.DurationHours > 0 {
+		kjGcDurationHours = i.GarbageCollection.KusciaJobGC.DurationHours
+	}
 	opt := &controllers.Options{
-		ControllerName:        "kuscia-controller-manager",
-		HealthCheckPort:       8090,
-		Workers:               4,
-		RunMode:               i.RunMode,
-		Namespace:             i.DomainID,
-		RootDir:               i.RootDir,
-		EnableWorkloadApprove: i.EnableWorkloadApprove,
+		ControllerName:              "kuscia-controller-manager",
+		HealthCheckPort:             8090,
+		Workers:                     4,
+		RunMode:                     i.RunMode,
+		Namespace:                   i.DomainID,
+		RootDir:                     i.RootDir,
+		EnableWorkloadApprove:       i.EnableWorkloadApprove,
+		KddGarbageCollectionEnabled: kddGcEnabled,
+		DomainDataGCDurationHours:   gcDurationHours,
+		KusciaJobGCDurationHours:    kjGcDurationHours,
 	}
 
 	return controllers.NewServer(
@@ -81,6 +100,9 @@ func NewControllersModule(i *ModuleRuntimeConfigs) (Module, error) {
 
 			{
 				NewControler: garbagecollection.NewKusciaJobGCController,
+			},
+			{
+				NewControler: garbagecollection.NewKusciaDomainDataGCController,
 			},
 		},
 	), nil

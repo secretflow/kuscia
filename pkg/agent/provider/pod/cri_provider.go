@@ -26,6 +26,7 @@ import (
 
 	v1 "k8s.io/api/core/v1"
 	k8sresource "k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -35,8 +36,8 @@ import (
 	"k8s.io/client-go/util/flowcontrol"
 	internalapi "k8s.io/cri-api/pkg/apis"
 	runtimeapi "k8s.io/cri-api/pkg/apis/runtime/v1"
+	remote "k8s.io/cri-client/pkg"
 	"k8s.io/kubernetes/pkg/credentialprovider"
-	"k8s.io/kubernetes/pkg/kubelet/cri/remote"
 	"k8s.io/kubernetes/pkg/kubelet/logs"
 	"k8s.io/kubernetes/pkg/kubelet/network/dns"
 	"k8s.io/kubernetes/pkg/kubelet/util"
@@ -196,12 +197,12 @@ func NewCRIProvider(dep *CRIProviderDependence) (kri.PodProvider, error) {
 
 	switch dep.Runtime {
 	case config.ContainerRuntime:
-		remoteRuntimeService, err = remote.NewRemoteRuntimeService(dep.CRIProviderCfg.RemoteRuntimeEndpoint, dep.CRIProviderCfg.RuntimeRequestTimeout, nil)
+		remoteRuntimeService, err = remote.NewRemoteRuntimeService(dep.CRIProviderCfg.RemoteRuntimeEndpoint, dep.CRIProviderCfg.RuntimeRequestTimeout, nil, nil)
 		if err != nil {
 			return nil, err
 		}
 		remoteImageService, err = remote.NewRemoteImageService(dep.CRIProviderCfg.RemoteImageEndpoint,
-			dep.CRIProviderCfg.RuntimeRequestTimeout, nil)
+			dep.CRIProviderCfg.RuntimeRequestTimeout, nil, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -235,6 +236,8 @@ func NewCRIProvider(dep *CRIProviderDependence) (kri.PodProvider, error) {
 		realOS,
 		dep.CRIProviderCfg.ContainerLogMaxSize,
 		dep.CRIProviderCfg.ContainerLogMaxFiles,
+		1,
+		metav1.Duration{Duration: 10 * time.Second},
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize container log manager: %v", err)

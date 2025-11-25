@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"io"
 	"math/rand"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -28,12 +29,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/secretflow/kuscia/pkg/transport/codec"
 	"github.com/secretflow/kuscia/pkg/transport/config"
 	"github.com/secretflow/kuscia/pkg/transport/msq"
 	"github.com/secretflow/kuscia/pkg/transport/transerr"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
-	"github.com/stretchr/testify/assert"
 )
 
 const (
@@ -72,11 +74,24 @@ func NewStr(str string) []byte {
 func verifyResponse(t *testing.T, req *http.Request, code transerr.ErrorCode) *codec.Outbound {
 	client := &http.Client{}
 	resp, err := client.Do(req)
-	assert.NoError(t, err)
+	if err != nil {
+		t.Fatalf("HTTP request failed: %v", err)
+		return nil
+	}
+	defer resp.Body.Close()
+
 	assert.Equal(t, resp.StatusCode, 200)
 	body, err := io.ReadAll(resp.Body)
 	assert.NoError(t, err)
 	outbound, err := server.codec.UnMarshal(body)
+	if err != nil {
+		t.Fatalf("Failed to unmarshal response: %v", err)
+		return nil
+	}
+	if outbound == nil {
+		t.Fatal("Outbound response is nil")
+		return nil
+	}
 	assert.Equal(t, string(code), outbound.Code)
 	return outbound
 }
@@ -87,10 +102,42 @@ func TestMain(m *testing.M) {
 	msqConfig = msq.DefaultMsgConfig()
 
 	server = NewServer(httpConfig, msq.NewSessionManager(msqConfig))
-	go server.Start(context.Background())
-	// wait server startup
-	time.Sleep(time.Millisecond * 200)
-	os.Exit(m.Run())
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	go func() {
+		if err := server.Start(ctx); err != nil {
+			nlog.Errorf("Server failed to start: %v", err)
+		}
+	}()
+
+	// Wait for server to start with retry mechanism
+	maxRetries := 10
+	retryInterval := time.Millisecond * 100
+
+	for i := 0; i < maxRetries; i++ {
+		time.Sleep(retryInterval)
+
+		// Check if server port is open
+		conn, err := net.DialTimeout("tcp", "127.0.0.1:2001", time.Second)
+		if err == nil {
+			conn.Close()
+			break
+		}
+
+		if i == maxRetries-1 {
+			nlog.Error("Server failed to start within timeout")
+			os.Exit(1)
+		}
+	}
+
+	// Run tests
+	exitCode := m.Run()
+
+	// Clean up
+	cancel()
+	os.Exit(exitCode)
 }
 
 func TestTransportAndPop(t *testing.T) {

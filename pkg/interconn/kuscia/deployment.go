@@ -365,18 +365,14 @@ func (c *Controller) processDeploymentAsPartner(ctx context.Context, deployment 
 		return fmt.Errorf("host %v resource accessor has not synced, retry", initiator)
 	}
 
-	hDeploymentSummary, err := hra.HostDeploymentSummaryLister().KusciaDeploymentSummaries(masterDomainID).Get(deployment.Name)
+	//hDeploymentSummary, err := hra.HostDeploymentSummaryLister().KusciaDeploymentSummaries(masterDomainID).Get(deployment.Name)
+	hDeploymentSummary, err := hra.HostKusciaClient().KusciaV1alpha1().KusciaDeploymentSummaries(masterDomainID).Get(ctx, deployment.Name, metav1.GetOptions{})
 	if err != nil {
+		nlog.Errorf("Get deploymentSummary %v from host %v cluster failed, %v", deployment.Name, initiator, err)
 		if k8serrors.IsNotFound(err) {
-			hDeploymentSummary, err = hra.HostKusciaClient().KusciaV1alpha1().KusciaDeploymentSummaries(masterDomainID).Get(ctx, deployment.Name, metav1.GetOptions{})
+			return nil
 		}
-		if err != nil {
-			nlog.Errorf("Get deploymentSummary %v from host %v cluster failed, %v", deployment.Name, initiator, err)
-			if k8serrors.IsNotFound(err) {
-				return nil
-			}
-			return err
-		}
+		return err
 	}
 
 	kds := hDeploymentSummary.DeepCopy()

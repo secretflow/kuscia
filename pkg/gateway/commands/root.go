@@ -139,7 +139,7 @@ func Run(ctx context.Context, gwConfig *config.GatewayConfig, clients *kubeconfi
 	go ec.Run(concurrentSyncs, ctx.Done())
 
 	// add diagnose cluster
-	err = ec.AddEnvoyCluster(gwConfig.DomainID, "diagnose", xds.ProtocolHTTP, map[string][]uint32{"127.0.0.1": {server.DIAGNOSE_SERVER_PORT}}, "", nil)
+	err = ec.AddEnvoyCluster(gwConfig.DomainID, "diagnose", xds.ProtocolHTTP, map[string][]uint32{"127.0.0.1": {server.DIAGNOSE_SERVER_PORT}}, "", nil, nil)
 	if err != nil {
 		nlog.Errorf("failed to add diagnose cluster, detail-> %v", err)
 		return fmt.Errorf("failed to add diagnose cluster, detail-> %v", err)

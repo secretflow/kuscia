@@ -29,6 +29,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/pointer"
 
 	"github.com/secretflow/kuscia/pkg/agent/framework"
 	"github.com/secretflow/kuscia/pkg/common"
@@ -430,9 +431,17 @@ func generateService(partyKitInfo *PartyKitInfo, serviceName string, port kuscia
 	}
 
 	annotations := map[string]string{
-		common.InitiatorAnnotationKey:    partyKitInfo.kd.Spec.Initiator,
-		common.ProtocolAnnotationKey:     string(port.Protocol),
-		common.AccessDomainAnnotationKey: partyKitInfo.portAccessDomains[port.Name],
+		common.InitiatorAnnotationKey:        partyKitInfo.kd.Spec.Initiator,
+		common.ProtocolAnnotationKey:         string(port.Protocol),
+		common.AccessDomainAnnotationKey:     partyKitInfo.portAccessDomains[port.Name],
+		common.AnnotationStickySessionCookie: common.AnnotationStickySessionCookieValue,
+		common.AnnotationStickySessionTTL:    fmt.Sprintf("%ds", common.AnnotationStickySessionTTLValue),
+	}
+	// Check if sticky sessions are enabled
+	sessionAffinityConfig := &corev1.SessionAffinityConfig{
+		ClientIP: &corev1.ClientIPConfig{
+			TimeoutSeconds: pointer.Int32(int32(common.AnnotationStickySessionTTLValue)),
+		},
 	}
 
 	svc := &corev1.Service{
@@ -443,8 +452,10 @@ func generateService(partyKitInfo *PartyKitInfo, serviceName string, port kuscia
 			Annotations: annotations,
 		},
 		Spec: corev1.ServiceSpec{
-			Type:      corev1.ServiceTypeClusterIP,
-			ClusterIP: "None",
+			Type:                  corev1.ServiceTypeClusterIP,
+			ClusterIP:             "None",
+			SessionAffinity:       corev1.ServiceAffinityNone,
+			SessionAffinityConfig: sessionAffinityConfig,
 			Selector: map[string]string{
 				common.LabelKubernetesDeploymentName: partyKitInfo.dkInfo.deploymentName,
 			},

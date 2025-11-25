@@ -16,10 +16,14 @@ package kuscia
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/kubernetes/scheme"
+	k8stesting "k8s.io/client-go/testing"
 
 	"github.com/secretflow/kuscia/pkg/common"
 	"github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
@@ -40,6 +44,31 @@ func makeMockTask(namespace, name string) *v1alpha1.KusciaTask {
 	}
 
 	return task
+}
+
+func makeMockDomainForTest(name string) *v1alpha1.Domain {
+	domain := &v1alpha1.Domain{
+		ObjectMeta: v1.ObjectMeta{
+			Name: name,
+		},
+	}
+	return domain
+}
+
+func makeMockTaskSummaryForTest(namespace, name, rv string) *v1alpha1.KusciaTaskSummary {
+	ts := &v1alpha1.KusciaTaskSummary{
+		ObjectMeta: v1.ObjectMeta{
+			Namespace:       namespace,
+			Name:            name,
+			ResourceVersion: rv,
+		},
+		Spec: v1alpha1.KusciaTaskSummarySpec{
+			Alias: name,
+			JobID: "job-1",
+		},
+	}
+
+	return ts
 }
 
 func TestHandleUpdatedTask(t *testing.T) {
@@ -378,6 +407,112 @@ func TestProcessTaskAsPartner(t *testing.T) {
 	kt.Annotations[common.KusciaPartyMasterDomainAnnotationKey] = "bob"
 	got = c.processTaskAsPartner(ctx, kt2)
 	assert.Equal(t, true, got == nil)
+}
+
+// [Test Case] Test scenario: When getting taskSummary in processTaskAsPartner function returns NotFound error, task should be deleted and nil should be returned
+func TestProcessTaskAsPartner_TaskSummaryNotFound(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
+	// Create a task object
+	kt := makeMockTask("cross-domain", "task-1")
+	kt.Annotations[common.InitiatorAnnotationKey] = "alice"
+	kt.Annotations[common.KusciaPartyMasterDomainAnnotationKey] = "bob"
+
+	// Create fake client, but don't add any objects, so Get operation will return NotFound error
+	kusciaFakeClient := kusciaclientsetfake.NewSimpleClientset()
+	kusciaInformerFactory := kusciainformers.NewSharedInformerFactory(kusciaFakeClient, 0)
+	domainInformer := kusciaInformerFactory.Kuscia().V1alpha1().Domains()
+
+	// Add alice domain
+	aliceDomain := makeMockDomainForTest("alice")
+	domainInformer.Informer().GetStore().Add(aliceDomain)
+
+	// Prepare hostResourceManager
+	hostKusciaFakeClient := kusciaclientsetfake.NewSimpleClientset()
+	hostresources.GetHostClient = func(token, masterURL string) (*kubeconfig.KubeClients, error) {
+		return &kubeconfig.KubeClients{
+			KusciaClient: hostKusciaFakeClient,
+		}, nil
+	}
+
+	opt := &hostresources.Options{
+		MemberKusciaClient: kusciaFakeClient,
+	}
+	hrm := hostresources.NewHostResourcesManager(opt)
+	hrm.Register("alice", "bob")
+	for !hrm.GetHostResourceAccessor("alice", "bob").HasSynced() {
+	}
+
+	c := &Controller{
+		kusciaClient:        kusciaFakeClient,
+		hostResourceManager: hrm,
+		domainLister:        domainInformer.Lister(),
+	}
+
+	// Call processTaskAsPartner, should return nil
+	got := c.processTaskAsPartner(ctx, kt)
+	assert.Equal(t, nil, got)
+
+	// Verify that task has been deleted
+	_, err := kusciaFakeClient.KusciaV1alpha1().KusciaTasks(kt.Namespace).Get(ctx, kt.Name, v1.GetOptions{})
+	assert.NotNil(t, err) // Should return error because task has been deleted
+}
+
+// [Test Case] Test scenario: When getting taskSummary in processTaskAsPartner function returns other errors, the error should be returned
+func TestProcessTaskAsPartner_GetTaskSummaryError(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
+	// Create a task object
+	kt := makeMockTask("cross-domain", "task-1")
+	kt.Annotations[common.InitiatorAnnotationKey] = "alice"
+	kt.Annotations[common.KusciaPartyMasterDomainAnnotationKey] = "bob"
+
+	// Create fake client
+	kusciaFakeClient := kusciaclientsetfake.NewSimpleClientset()
+	kusciaInformerFactory := kusciainformers.NewSharedInformerFactory(kusciaFakeClient, 0)
+	domainInformer := kusciaInformerFactory.Kuscia().V1alpha1().Domains()
+
+	// Add alice domain
+	aliceDomain := makeMockDomainForTest("alice")
+	domainInformer.Informer().GetStore().Add(aliceDomain)
+
+	// Prepare hostResourceManager, using a fake client that will return an error
+	// We can simulate Get operation failure by adding an error to the fake client's reactor
+	testScheme := runtime.NewScheme()
+	_ = v1alpha1.AddToScheme(testScheme)
+	_ = scheme.AddToScheme(testScheme)
+
+	hostKusciaFakeClient := kusciaclientsetfake.NewSimpleClientset()
+	hostKusciaFakeClient.PrependReactor("get", "kusciatasksummaries", func(action k8stesting.Action) (handled bool, ret runtime.Object, err error) {
+		return true, nil, fmt.Errorf("simulated error")
+	})
+
+	hostresources.GetHostClient = func(token, masterURL string) (*kubeconfig.KubeClients, error) {
+		return &kubeconfig.KubeClients{
+			KusciaClient: hostKusciaFakeClient,
+		}, nil
+	}
+
+	opt := &hostresources.Options{
+		MemberKusciaClient: kusciaFakeClient,
+	}
+	hrm := hostresources.NewHostResourcesManager(opt)
+	hrm.Register("alice", "bob")
+	for !hrm.GetHostResourceAccessor("alice", "bob").HasSynced() {
+	}
+
+	c := &Controller{
+		kusciaClient:        kusciaFakeClient,
+		hostResourceManager: hrm,
+		domainLister:        domainInformer.Lister(),
+	}
+
+	// Call processTaskAsPartner, should return an error
+	got := c.processTaskAsPartner(ctx, kt)
+	assert.NotNil(t, got)
+	assert.Equal(t, "simulated error", got.Error())
 }
 
 func TestUpdateHostTaskSummary(t *testing.T) {

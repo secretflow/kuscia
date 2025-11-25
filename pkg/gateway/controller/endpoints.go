@@ -31,6 +31,7 @@ import (
 	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
+	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 	v1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -318,7 +319,7 @@ func (ec *EndpointsController) AddEnvoyClusterByExternalName(service *v1.Service
 
 	hosts := make(map[string][]uint32)
 	hosts[service.Spec.ExternalName] = ports
-	err = ec.AddEnvoyCluster(namespace, name, protocol, hosts, accessDomains, ec.clientCert)
+	err = ec.AddEnvoyCluster(namespace, name, protocol, hosts, accessDomains, ec.clientCert, service)
 
 	if err != nil {
 		return err
@@ -352,7 +353,7 @@ func (ec *EndpointsController) AddEnvoyClusterByEndpoints(service *v1.Service, e
 		return nil
 	}
 
-	err := ec.AddEnvoyCluster(namespace, name, protocol, hosts, accessDomains, ec.clientCert)
+	err := ec.AddEnvoyCluster(namespace, name, protocol, hosts, accessDomains, ec.clientCert, service)
 
 	if err != nil {
 		return err
@@ -415,13 +416,13 @@ func parseAndValidateProtocol(protocol string, service string) (string, error) {
 }
 
 func (ec *EndpointsController) AddEnvoyCluster(namespace string, name string, protocol string, hosts map[string][]uint32,
-	accessDomains string, clientCert *xds.TLSCert) error {
-	internalVh, err := ec.generateVirtualHost(namespace, name, accessDomains, false)
+	accessDomains string, clientCert *xds.TLSCert, service *v1.Service) error {
+	internalVh, err := ec.generateVirtualHost(namespace, name, accessDomains, false, service)
 	if err != nil {
 		return err
 	}
 
-	externalVh, err := ec.generateVirtualHost(namespace, name, accessDomains, true)
+	externalVh, err := ec.generateVirtualHost(namespace, name, accessDomains, true, service)
 	if err != nil {
 		return err
 	}
@@ -458,7 +459,39 @@ func (ec *EndpointsController) generateDomains(namespace, name string) []string 
 	return domains
 }
 
-func (ec *EndpointsController) generateVirtualHost(namespace string, name string, accessDomains string, isExternal bool) (*route.VirtualHost, error) {
+func (ec *EndpointsController) generateVirtualHost(namespace string, name string, accessDomains string, isExternal bool, service *v1.Service) (*route.VirtualHost, error) {
+	var hashPolicies []*route.RouteAction_HashPolicy
+	// If the Service enables Session Affinity of type ClientIP, configure Envoy's HashPolicy.
+	if service != nil {
+		if service.Spec.SessionAffinity == v1.ServiceAffinityClientIP {
+			hashPolicies = append(hashPolicies, &route.RouteAction_HashPolicy{
+				PolicySpecifier: &route.RouteAction_HashPolicy_ConnectionProperties_{
+					ConnectionProperties: &route.RouteAction_HashPolicy_ConnectionProperties{
+						SourceIp: true,
+					},
+				},
+			})
+			// Add Header-based HashPolicy as an alternative
+			hashPolicies = append(hashPolicies, &route.RouteAction_HashPolicy{
+				PolicySpecifier: &route.RouteAction_HashPolicy_Header_{
+					Header: &route.RouteAction_HashPolicy_Header{
+						HeaderName: "Kuscia-Source",
+					},
+				},
+			})
+		} else {
+			// The default is to use the original Header-based HashPolicy.
+			hashPolicies = []*route.RouteAction_HashPolicy{
+				{
+					PolicySpecifier: &route.RouteAction_HashPolicy_Header_{
+						Header: &route.RouteAction_HashPolicy_Header{
+							HeaderName: interconn.GetHashHeaderOfService(name),
+						},
+					},
+				},
+			}
+		}
+	}
 	virtualHost := &route.VirtualHost{
 		Domains: ec.generateDomains(namespace, name),
 		Routes: []*route.Route{
@@ -477,20 +510,35 @@ func (ec *EndpointsController) generateVirtualHost(namespace string, name string
 							HostRewriteSpecifier: &route.RouteAction_AutoHostRewrite{
 								AutoHostRewrite: wrapperspb.Bool(true),
 							},
-							HashPolicy: []*route.RouteAction_HashPolicy{
-								{
-									PolicySpecifier: &route.RouteAction_HashPolicy_Header_{
-										Header: &route.RouteAction_HashPolicy_Header{
-											HeaderName: interconn.GetHashHeaderOfService(name),
-										},
-									},
-								},
-							},
+							HashPolicy: hashPolicies,
 						},
 					),
 				},
 			},
 		},
+	}
+
+	// Add cookie-based sticky session support
+	if service != nil {
+		if cookieName, ok := service.Annotations[common.AnnotationStickySessionCookie]; ok && cookieName != "" {
+			var ttlSeconds int64 = 3600
+			if ttlStr, ok := service.Annotations[common.AnnotationStickySessionTTL]; ok {
+				if parsedTTL, err := strconv.ParseInt(ttlStr, 10, 64); err == nil && parsedTTL > 0 {
+					ttlSeconds = parsedTTL
+				}
+			}
+			cookiePolicy := &route.RouteAction_HashPolicy{
+				PolicySpecifier: &route.RouteAction_HashPolicy_Cookie_{
+					Cookie: &route.RouteAction_HashPolicy_Cookie{
+						Name: cookieName,
+						Ttl:  &durationpb.Duration{Seconds: ttlSeconds},
+					},
+				},
+			}
+			// Place the Cookie Policy at the top
+			hashPolicies = append([]*route.RouteAction_HashPolicy{cookiePolicy}, hashPolicies...)
+			virtualHost.Routes[0].Action.(*route.Route_Route).Route.HashPolicy = hashPolicies
+		}
 	}
 
 	// accessDomainRegex for example "(node-alice|node-bob|node-joke)"

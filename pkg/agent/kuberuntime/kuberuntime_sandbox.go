@@ -26,9 +26,9 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	kubetypes "k8s.io/apimachinery/pkg/types"
+	resourcehelper "k8s.io/component-helpers/resource"
 	runtimeapi "k8s.io/cri-api/pkg/apis/runtime/v1"
-	resourcehelper "k8s.io/kubernetes/pkg/api/v1/resource"
-	"k8s.io/kubernetes/pkg/kubelet/types"
+	"k8s.io/kubelet/pkg/types"
 	"k8s.io/kubernetes/pkg/kubelet/util"
 
 	pkgcontainer "github.com/secretflow/kuscia/pkg/agent/container"

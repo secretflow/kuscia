@@ -93,6 +93,26 @@ dataMesh:
 #     dataSourceTypes:
 #      - "odps"
 
+############################################################################
+############                 Garbage Collection Configs        ############
+############################################################################
+# Garbage Collection configuration
+garbageCollection:
+  # Kuscia Domain Data Garbage Collection configuration
+  kusciaDomainDataGC:
+    # Whether to enable kuscia domain data garbage collection. Default is true.
+    enable: false
+    # DurationHours specifies how many hours to retain domain data before garbage collection.
+    # Examples: 24 (24 hours), 168 (7 days), 720 (30 days)
+    # Default is 720 (30 days) if not specified
+    durationHours: 720
+  # KusciaJobGC configuration for kuscia job garbage collection
+  kusciaJobGC:
+    # DurationHours specifies how many hours to retain completed kuscia jobs before garbage collection.
+    # Examples: 24 (24 hours), 168 (7 days), 720 (30 days)
+    # Default is 720 (30 days) if not specified
+    durationHours: 720
+
 #############################################################################
 ############                 SecretBackend Configs               ############
 #############################################################################

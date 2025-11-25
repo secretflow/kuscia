@@ -72,4 +72,10 @@ type ControllerConfig struct {
 	KusciaClient          kusciaclientset.Interface
 	EventRecorder         record.EventRecorder
 	EnableWorkloadApprove bool
+	// KddGarbageCollectionEnabled controls whether kuscia domain data garbage collection is enabled
+	KddGarbageCollectionEnabled bool
+	// DomainDataGCDurationHours specifies retention hours for domain data
+	DomainDataGCDurationHours int
+	// KusciaJobGCDurationHours specifies retention hours for completed kuscia jobs
+	KusciaJobGCDurationHours int
 }

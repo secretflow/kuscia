@@ -74,8 +74,8 @@ func init() {
 	pgDatabase = env("PGDATABASE", "postgres")
 	pgSslmode = env("PGSSLMODE", "disable")
 
-	pgNetAddr = fmt.Sprintf("%s(%s:%s)", "tcp", pgHost, pgPort)
-	pc, err := net.Dial("tcp", fmt.Sprintf("%s:%s", pgHost, pgPort))
+	pgNetAddr = fmt.Sprintf("%s(%s)", "tcp", net.JoinHostPort(pgHost, pgPort))
+	pc, err := net.Dial("tcp", net.JoinHostPort(pgHost, pgPort))
 	if err == nil {
 		availablePostgreSQL = true
 		pc.Close()

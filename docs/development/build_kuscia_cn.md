@@ -78,10 +78,10 @@ Kuscia 镜像的构建依赖 Kuscia-Envoy 镜像，Kuscia 提供默认的 [Kusci
 
 kuscia-secretflow.Dockerfile 文件里默认的 Kuscia 镜像版本是 latest，Secretflow 版本是 1.11.0b1，如果需要指定其他版本，可以使用如下命令：
 
-此处以 Kuscia 1.0.0b0，Secretflow 1.11.0b1 版本为例
+此处以 Kuscia 1.1.0b0，Secretflow 1.11.0b1 版本为例
 
 ```bash
-docker build  --build-arg KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:1.0.0b0  --build-arg  SF_VERSION=1.11.0b1 -f ./kuscia-secretflow.Dockerfile .
+docker build  --build-arg KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:1.1.0b0  --build-arg  SF_VERSION=1.11.0b1 -f ./kuscia-secretflow.Dockerfile .
 ```
 
 ### 编译文档

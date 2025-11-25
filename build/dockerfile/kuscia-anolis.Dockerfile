@@ -14,15 +14,15 @@
 # limitations under the License.
 #
 
-ARG DEPS_IMAGE="secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia-deps:0.6.1b0"
+ARG DEPS_IMAGE="secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia-deps:0.7.0b0"
 ARG KUSCIA_ENVOY_IMAGE="secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia-envoy:0.6.2b0"
-ARG PROM_NODE_EXPORTER="secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/node-exporter:v1.7.0"
+ARG PROM_NODE_EXPORTER="secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/node-exporter:v1.9.1"
 ARG BASE_IMAGE="secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/anolisos:23"
 
-FROM ${DEPS_IMAGE} as deps
+FROM ${DEPS_IMAGE} AS deps
 
-FROM ${PROM_NODE_EXPORTER} as node_exporter
-FROM ${KUSCIA_ENVOY_IMAGE} as kuscia_envoy
+FROM ${PROM_NODE_EXPORTER} AS node_exporter
+FROM ${KUSCIA_ENVOY_IMAGE} AS kuscia_envoy
 
 FROM ${BASE_IMAGE}
 
@@ -52,12 +52,10 @@ RUN useradd -ms /bin/bash kuscia && \
     chmod -R g+rwxs /home/kuscia
 
 COPY --chown=kuscia:kuscia --from=deps /image/home/kuscia/bin ${HOME_DIR}/bin
-COPY --chown=kuscia:kuscia --from=deps /image/bin/aux /bin/aux
 COPY --chown=kuscia:kuscia --from=node_exporter /bin/node_exporter ${HOME_DIR}/bin
 
 RUN pushd ${HOME_DIR}/bin && \
     ln -s k3s crictl && \
-    ln -s k3s ctr && \
     ln -s k3s kubectl && \
     ln -s cni bridge && \
     ln -s cni flannel && \

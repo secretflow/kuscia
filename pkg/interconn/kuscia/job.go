@@ -557,30 +557,31 @@ func (c *Controller) processJobAsPartner(ctx context.Context, job *v1alpha1.Kusc
 		return fmt.Errorf("host %v resource accessor has not synced, retry", initiator)
 	}
 
-	hJobSummary, err := hra.HostJobSummaryLister().KusciaJobSummaries(masterDomainID).Get(job.Name)
+	//hJobSummary, err := hra.HostJobSummaryLister().KusciaJobSummaries(masterDomainID).Get(job.Name)
+	hJobSummary, err := hra.HostKusciaClient().KusciaV1alpha1().KusciaJobSummaries(masterDomainID).Get(ctx, job.Name, metav1.GetOptions{})
 	if err != nil {
+		//if k8serrors.IsNotFound(err) {
+		//	hJobSummary, err = hra.HostKusciaClient().KusciaV1alpha1().KusciaJobSummaries(masterDomainID).Get(ctx, job.Name, metav1.GetOptions{})
+		//}
+		//if err != nil {
+		nlog.Errorf("Get JobSummary %v from host %v cluster failed, %v", job.Name, initiator, err)
 		if k8serrors.IsNotFound(err) {
-			hJobSummary, err = hra.HostKusciaClient().KusciaV1alpha1().KusciaJobSummaries(masterDomainID).Get(ctx, job.Name, metav1.GetOptions{})
-		}
-		if err != nil {
-			nlog.Errorf("Get JobSummary %v from host %v cluster failed, %v", job.Name, initiator, err)
-			if k8serrors.IsNotFound(err) {
-				// check mirror job if exist
-				_, jobErr := hra.HostKusciaClient().KusciaV1alpha1().KusciaJobs(masterDomainID).Get(ctx, job.Name, metav1.GetOptions{})
-				if jobErr != nil {
-					if k8serrors.IsNotFound(jobErr) {
-						nlog.Infof("Host job %s/%s is not found, delete job %v", masterDomainID, job.Name, ikcommon.GetObjectNamespaceName(job))
-						err = c.kusciaClient.KusciaV1alpha1().KusciaJobs(job.Namespace).Delete(ctx, job.Name, metav1.DeleteOptions{})
-						if k8serrors.IsNotFound(err) {
-							return nil
-						}
-						return err
+			// check mirror job if exist
+			_, jobErr := hra.HostKusciaClient().KusciaV1alpha1().KusciaJobs(masterDomainID).Get(ctx, job.Name, metav1.GetOptions{})
+			if jobErr != nil {
+				if k8serrors.IsNotFound(jobErr) {
+					nlog.Infof("Host job %s/%s is not found, delete job %v", masterDomainID, job.Name, ikcommon.GetObjectNamespaceName(job))
+					err = c.kusciaClient.KusciaV1alpha1().KusciaJobs(job.Namespace).Delete(ctx, job.Name, metav1.DeleteOptions{})
+					if k8serrors.IsNotFound(err) {
+						return nil
 					}
-					return fmt.Errorf("failed to get host job %s/%s, %v", masterDomainID, job.Name, jobErr)
+					return err
 				}
+				return fmt.Errorf("failed to get host job %s/%s, %v", masterDomainID, job.Name, jobErr)
 			}
-			return err
 		}
+		return err
+		//}
 	}
 
 	return c.updateHostJobSummary(ctx, masterDomainID, hra.HostKusciaClient(), job, hJobSummary.DeepCopy())

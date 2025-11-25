@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/apache/arrow/go/v13/arrow"
 	"github.com/apache/arrow/go/v13/arrow/array"
@@ -165,6 +166,111 @@ func (u *PostgresqlUploader) transformColToStringArr(typ arrow.DataType, col arr
 				res[i] = sql.NullString{}
 			}
 		}
+	case *arrow.Date32Type:
+		arr := col.(*array.Date32)
+		for i := 0; i < arr.Len(); i++ {
+			if arr.IsValid(i) {
+				days := int(arr.Value(i))
+				date := time.Unix(int64(days*86400), 0).UTC()
+				res[i] = date.Format("2006-01-02")
+			} else {
+				res[i] = nil
+			}
+		}
+	case *arrow.Date64Type:
+		arr := col.(*array.Date64)
+		for i := 0; i < arr.Len(); i++ {
+			if arr.IsValid(i) {
+				ms := int64(arr.Value(i))
+				date := time.Unix(ms/1000, (ms%1000)*1000000).UTC()
+				res[i] = date.Format("2006-01-02 15:04:05")
+			} else {
+				res[i] = nil
+			}
+		}
+	case *arrow.Time32Type:
+		arr := col.(*array.Time32)
+		unit := col.DataType().(*arrow.Time32Type).Unit
+		for i := 0; i < arr.Len(); i++ {
+			if arr.IsValid(i) {
+				value := arr.Value(i)
+				var seconds int64
+				switch unit {
+				case arrow.Second:
+					seconds = int64(value)
+				case arrow.Millisecond:
+					seconds = int64(value) / 1000
+				default:
+					seconds = int64(value)
+				}
+				// Arrow Time32 represents time within a day, convert to time of day
+				t := time.Date(0, 1, 1, int(seconds/3600), int((seconds%3600)/60), int(seconds%60), 0, time.UTC)
+				res[i] = t.Format("15:04:05")
+			} else {
+				res[i] = nil
+			}
+		}
+	case *arrow.Time64Type:
+		arr := col.(*array.Time64)
+		unit := col.DataType().(*arrow.Time64Type).Unit
+		for i := 0; i < arr.Len(); i++ {
+			if arr.IsValid(i) {
+				value := arr.Value(i)
+				var micros int64
+				switch unit {
+				case arrow.Microsecond:
+					micros = int64(value)
+				case arrow.Nanosecond:
+					micros = int64(value) / 1000
+				default:
+					micros = int64(value)
+				}
+				// Arrow Time64 represents time within a day in microseconds, convert to time of day
+				totalSeconds := micros / 1000000
+				microsPart := micros % 1000000
+				hours := totalSeconds / 3600
+				minutes := (totalSeconds % 3600) / 60
+				seconds := totalSeconds % 60
+				t := time.Date(0, 1, 1, int(hours), int(minutes), int(seconds), int(microsPart)*1000, time.UTC)
+				res[i] = t.Format("15:04:05.000000")
+			} else {
+				res[i] = nil
+			}
+		}
+	case *arrow.TimestampType:
+		arr := col.(*array.Timestamp)
+		unit := col.DataType().(*arrow.TimestampType).Unit
+		for i := 0; i < arr.Len(); i++ {
+			if arr.IsValid(i) {
+				value := arr.Value(i)
+				var seconds int64
+				switch unit {
+				case arrow.Second:
+					seconds = int64(value)
+				case arrow.Millisecond:
+					seconds = int64(value) / 1000
+				case arrow.Microsecond:
+					seconds = int64(value) / 1000000
+				case arrow.Nanosecond:
+					seconds = int64(value) / 1000000000
+				default:
+					seconds = int64(value)
+				}
+				t := time.Unix(seconds, 0).UTC()
+				res[i] = t.Format("2006-01-02 15:04:05")
+			} else {
+				res[i] = nil
+			}
+		}
+	case *arrow.LargeStringType:
+		arr := col.(*array.LargeString)
+		for i := 0; i < arr.Len(); i++ {
+			if arr.IsValid(i) {
+				res[i] = arr.Value(i)
+			} else {
+				res[i] = sql.NullString{}
+			}
+		}
 	default:
 		panic(fmt.Errorf("arrow to Postgresql: field has unsupported data type %s", typ.String()))
 	}
@@ -172,7 +278,6 @@ func (u *PostgresqlUploader) transformColToStringArr(typ arrow.DataType, col arr
 }
 
 func (u *PostgresqlUploader) ArrowDataTypeToPostgresqlType(colType arrow.DataType) (string, error) {
-
 	id := colType.ID()
 	switch id {
 	case arrow.UINT8:
@@ -193,12 +298,24 @@ func (u *PostgresqlUploader) ArrowDataTypeToPostgresqlType(colType arrow.DataTyp
 		return "BIGINT", nil
 	case arrow.BOOL:
 		return "BOOLEAN", nil
-	case arrow.STRING, arrow.BINARY, arrow.LARGE_BINARY:
+	case arrow.STRING, arrow.BINARY, arrow.LARGE_BINARY, arrow.LARGE_STRING:
 		return "TEXT", nil
 	case arrow.FLOAT32:
 		return "REAL", nil
 	case arrow.FLOAT64:
 		return "DOUBLE PRECISION", nil
+	case arrow.DATE32:
+		return "DATE", nil
+	case arrow.DATE64:
+		return "TIMESTAMP", nil
+	case arrow.TIME32:
+		return "TIME WITHOUT TIME ZONE", nil
+	case arrow.TIME64:
+		return "TIME WITHOUT TIME ZONE", nil
+	case arrow.TIMESTAMP:
+		return "TIMESTAMPTZ", nil
+	case arrow.DURATION:
+		return "INTERVAL", nil
 	default:
 		return "", fmt.Errorf("unsupported arrow data type `%s`", colType)
 	}

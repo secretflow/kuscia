@@ -411,7 +411,7 @@ func TestBuildStructMap_WithOrg(t *testing.T) {
 
 	var buf bytes.Buffer
 	assert.NoError(t, tmpl.Execute(&buf, data))
-	nlog.Infof(buf.String())
+	nlog.Infof("%s", buf.String())
 
 	var test interface{}
 	assert.NoError(t, json.Unmarshal(buf.Bytes(), &test))

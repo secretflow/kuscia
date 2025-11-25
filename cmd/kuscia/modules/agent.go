@@ -123,7 +123,7 @@ func precheckKernelVersion() {
 	}
 	if kernel < 4 || kernel == 4 && major < 8 {
 		nlog.Warnf("Kernel version < 4.8, set PROOT_NO_SECCOMP=1")
-		os.Setenv("PROOT_NO_SECCOMP", "1")
+		_ = os.Setenv("PROOT_NO_SECCOMP", "1")
 	}
 }
 

@@ -280,6 +280,31 @@ func getTableFlightData(t *testing.T, ctx *utils.DataMeshRequestContext, colType
 			builderFunc[idx] = func(bld array.Builder, val any) {
 				bld.(*array.Uint64Builder).Append(val.(uint64))
 			}
+		case *arrow.Date32Type:
+			recordBuilder[idx] = array.NewDate32Builder(memory.DefaultAllocator)
+			builderFunc[idx] = func(bld array.Builder, val any) {
+				bld.(*array.Date32Builder).Append(arrow.Date32(val.(int32)))
+			}
+		case *arrow.Date64Type:
+			recordBuilder[idx] = array.NewDate64Builder(memory.DefaultAllocator)
+			builderFunc[idx] = func(bld array.Builder, val any) {
+				bld.(*array.Date64Builder).Append(arrow.Date64(val.(int64)))
+			}
+		case *arrow.Time32Type:
+			recordBuilder[idx] = array.NewTime32Builder(memory.DefaultAllocator, arrow.FixedWidthTypes.Time32s.(*arrow.Time32Type))
+			builderFunc[idx] = func(bld array.Builder, val any) {
+				bld.(*array.Time32Builder).Append(arrow.Time32(val.(int32)))
+			}
+		case *arrow.Time64Type:
+			recordBuilder[idx] = array.NewTime64Builder(memory.DefaultAllocator, arrow.FixedWidthTypes.Time64us.(*arrow.Time64Type))
+			builderFunc[idx] = func(bld array.Builder, val any) {
+				bld.(*array.Time64Builder).Append(arrow.Time64(val.(int64)))
+			}
+		case *arrow.TimestampType:
+			recordBuilder[idx] = array.NewTimestampBuilder(memory.DefaultAllocator, arrow.FixedWidthTypes.Timestamp_s.(*arrow.TimestampType))
+			builderFunc[idx] = func(bld array.Builder, val any) {
+				bld.(*array.TimestampBuilder).Append(arrow.Timestamp(val.(int64)))
+			}
 		default:
 			panic("invalid unit test data type")
 		}

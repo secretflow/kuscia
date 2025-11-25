@@ -340,13 +340,19 @@ func (r *Runtime) RemovePodSandbox(ctx context.Context, podSandboxID string) err
 		return fmt.Errorf("failed to forcibly stop sandbox %q: %v", podSandboxID, err)
 	}
 
+	// Get all containers belonging to this sandbox first to avoid concurrent modification issues
+	var containersToRemove []string
 	cntrs := r.containerStore.List()
 	for _, cntr := range cntrs {
-		if cntr.SandboxID != podSandboxID {
-			continue
+		if cntr.SandboxID == podSandboxID {
+			containersToRemove = append(containersToRemove, cntr.ID)
 		}
-		if err := r.RemoveContainer(ctx, cntr.ID); err != nil {
-			return fmt.Errorf("failed to remove container %q: %w", cntr.ID, err)
+	}
+
+	// Remove all containers belonging to this sandbox
+	for _, containerID := range containersToRemove {
+		if err := r.RemoveContainer(ctx, containerID); err != nil {
+			return fmt.Errorf("failed to remove container %q: %w", containerID, err)
 		}
 	}
 
@@ -481,6 +487,18 @@ func (r *Runtime) ReopenContainerLog(ctx context.Context, containerID string) er
 		return fmt.Errorf("failed to start container %q, detail-> %v", containerID, err)
 	}
 
+	return nil
+}
+
+func (r *Runtime) ImageFsInfo(ctx context.Context) (*runtimeapi.ImageFsInfoResponse, error) {
+	return &runtimeapi.ImageFsInfoResponse{}, nil
+}
+
+func (r *Runtime) UpdatePodSandboxResources(ctx context.Context, request *runtimeapi.UpdatePodSandboxResourcesRequest) (*runtimeapi.UpdatePodSandboxResourcesResponse, error) {
+	return &runtimeapi.UpdatePodSandboxResourcesResponse{}, nil
+}
+
+func (r *Runtime) GetContainerEvents(ctx context.Context, containerEventsCh chan *runtimeapi.ContainerEventResponse, connectionEstablishedCallback func(runtimeapi.RuntimeService_GetContainerEventsClient)) error {
 	return nil
 }
 

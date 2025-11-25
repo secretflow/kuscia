@@ -28,7 +28,7 @@
 # docs/_build/_static/css/custom.css
 # docs/_build/_static/js/custom.js
 # =========================== error link =================================
-LINKINATOR_IGNORE := "jsdelivr custom kuscia ip:port 127.0.0.1 service oss.xxx 1.1.1.1 10.0.0.14 101.11.11.11 docker data.name aliyun.com dev.mysql"
+LINKINATOR_IGNORE := "jsdelivr custom kuscia ip:port 127.0.0.1 service oss.xxx 1.1.1.1 10.0.0.14 101.11.11.11 docker data.name aliyun.com dev.mysql exits.it"
 
 include .VERSION
 DOCS_ROOT_DIR        ?= docs
@@ -49,6 +49,7 @@ VERSION_CHECK_DIRS   ?= docs scripts hack
 .PHONY: sphinx-build
 sphinx-build: sphinx-clean
 sphinx-build: markdown-check
+#sphinx-build: version_check
 sphinx-build:
 	@$(LOG_TARGET)
 	@$(call errorLog, Warning: if build failed please check sphinx version it must to be 6.2.1!)

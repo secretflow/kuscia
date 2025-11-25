@@ -51,3 +51,38 @@ func Test_defaultMasterOverwrite(t *testing.T) {
 		})
 	}
 }
+
+func Test_KusciaDomainDataGCConfig_DefaultEnable(t *testing.T) {
+	// Test that when Enable is not set in the config, it should be nil
+	configStr := `{}
+`
+	var gcConfig KusciaDomainDataGCConfig
+	err := yaml.Unmarshal([]byte(configStr), &gcConfig)
+	asserts.IsNil(err, "unmarshal yaml should success")
+	// Enable should be nil when not set in config
+	if gcConfig.Enable != nil {
+		t.Errorf("Enable should be nil when not set in config, got %v", *gcConfig.Enable)
+	}
+	// Test that when Enable is explicitly set to true, it should be true
+	configStr = `enable: true
+`
+	err = yaml.Unmarshal([]byte(configStr), &gcConfig)
+	asserts.IsNil(err, "unmarshal yaml should success")
+	// Enable should be true when explicitly set to true
+	if gcConfig.Enable == nil {
+		t.Errorf("Enable should not be nil when explicitly set to true")
+	} else if !*gcConfig.Enable {
+		t.Errorf("Enable should be true when explicitly set to true, got %v", *gcConfig.Enable)
+	}
+	// Test that when Enable is explicitly set to false, it should be false
+	configStr = `enable: false
+`
+	err = yaml.Unmarshal([]byte(configStr), &gcConfig)
+	asserts.IsNil(err, "unmarshal yaml should success")
+	// Enable should be false when explicitly set to false
+	if gcConfig.Enable == nil {
+		t.Errorf("Enable should not be nil when explicitly set to false")
+	} else if *gcConfig.Enable {
+		t.Errorf("Enable should be false when explicitly set to false, got %v", *gcConfig.Enable)
+	}
+}

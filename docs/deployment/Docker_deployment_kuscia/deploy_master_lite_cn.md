@@ -17,8 +17,8 @@
 指定 Kuscia 版本：
 
 ```bash
-# The Kuscia image used, here using version 1.0.0b0 image
-export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:1.0.0b0
+# The Kuscia image used, here using version 1.1.0b0 image
+export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:1.1.0b0
 ```
 
 指定 SecretFlow 版本：
@@ -158,8 +158,8 @@ Alice 的部署 Token: abcdefg
 指定 Kuscia 版本：
 
 ```bash
-# The Kuscia image used, here using version 1.0.0b0 image
-export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:1.0.0b0
+# The Kuscia image used, here using version 1.1.0b0 image
+export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:1.1.0b0
 ```
 
 获取部署脚本，部署脚本会下载到当前目录：
@@ -222,8 +222,8 @@ Bob 的部署 Token: hijklmn
 指定 Kuscia 版本：
 
 ```bash
-# The Kuscia image used, here using version 1.0.0b0 image
-export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:1.0.0b0
+# The Kuscia image used, here using version 1.1.0b0 image
+export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:1.1.0b0
 ```
 
 获取部署脚本，部署脚本会下载到当前目录：

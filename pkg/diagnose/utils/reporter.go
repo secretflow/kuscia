@@ -77,7 +77,7 @@ func (r *Reporter) NewTableWriter() *Table {
 
 func (r *Reporter) WriteLine(name string) error {
 	if r.fileName != "" {
-		fmt.Fprintln(r.file, name)
+		_, _ = fmt.Fprintln(r.file, name)
 	} else {
 		fmt.Println(name)
 	}
@@ -86,7 +86,7 @@ func (r *Reporter) WriteLine(name string) error {
 
 func (r *Table) WriteLine(name string) error {
 	if r.fileName != "" {
-		fmt.Fprintln(r.file, name)
+		_, _ = fmt.Fprintln(r.file, name)
 	} else {
 		fmt.Println(name)
 	}

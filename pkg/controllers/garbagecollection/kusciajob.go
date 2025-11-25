@@ -60,6 +60,11 @@ func NewKusciaJobGCController(ctx context.Context, config controllers.Controller
 	kusciaJobInformer := kusciaInformerFactory.Kuscia().V1alpha1().KusciaJobs()
 	kusciaTaskInformer := kusciaInformerFactory.Kuscia().V1alpha1().KusciaTasks()
 	namespaceInformer := kubeInformerFactory.Core().V1().Namespaces()
+	// Use configured duration, if 0 use default 720 hours (30 days)
+	gcDuration := defaultGCDuration
+	if config.KusciaJobGCDurationHours > 0 {
+		gcDuration = time.Duration(config.KusciaJobGCDurationHours) * time.Hour
+	}
 
 	gcController := &KusciaJobGCController{
 		kusciaClient:          kusciaClient,
@@ -69,7 +74,7 @@ func NewKusciaJobGCController(ctx context.Context, config controllers.Controller
 		kusciaTaskSynced:      kusciaTaskInformer.Informer().HasSynced,
 		kusciaJobSynced:       kusciaJobInformer.Informer().HasSynced,
 		namespaceSynced:       namespaceInformer.Informer().HasSynced,
-		kusciaJobGCDuration:   defaultGCDuration,
+		kusciaJobGCDuration:   gcDuration,
 	}
 	gcController.ctx, gcController.cancel = context.WithCancel(ctx)
 	return gcController

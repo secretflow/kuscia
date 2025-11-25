@@ -99,6 +99,8 @@ func NewK8sLogManager(
 		pkgcontainer.RealOS{},
 		logMaxSize,
 		logMaxFiles,
+		1,
+		metav1.Duration{Duration: 10 * time.Second},
 	)
 	if err != nil {
 		nlog.Errorf("Create runk pod log manager failed, err: %v", err)
@@ -147,6 +149,14 @@ func (kl *K8sLogManager) ReopenContainerLog(ctx context.Context, ContainerID str
 
 func (kl *K8sLogManager) RuntimeConfig(ctx context.Context) (*runtimeapi.RuntimeConfigResponse, error) {
 	return &runtimeapi.RuntimeConfigResponse{}, nil
+}
+
+func (kl *K8sLogManager) UpdatePodSandboxResources(ctx context.Context, request *runtimeapi.UpdatePodSandboxResourcesRequest) (*runtimeapi.UpdatePodSandboxResourcesResponse, error) {
+	return &runtimeapi.UpdatePodSandboxResourcesResponse{}, nil
+}
+
+func (kl *K8sLogManager) GetContainerEvents(ctx context.Context, containerEventsCh chan *runtimeapi.ContainerEventResponse, connectionEstablishedCallback func(runtimeapi.RuntimeService_GetContainerEventsClient)) error {
+	return nil
 }
 
 func (kl *K8sLogManager) Start(ctx context.Context) error {

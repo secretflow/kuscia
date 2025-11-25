@@ -3,7 +3,7 @@ kind: ClusterDomainRoute
 metadata:
   name: {{.SRC_DOMAIN}}-{{.DEST_DOMAIN}}
 spec:
-  source : {{.SRC_DOMAIN}}
+  source: {{.SRC_DOMAIN}}
   destination: {{.DEST_DOMAIN}}
   interConnProtocol: {{.INTERCONN_PROTOCOL}}
   endpoint:

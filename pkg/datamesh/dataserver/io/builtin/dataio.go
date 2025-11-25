@@ -36,6 +36,8 @@ import (
 
 const CSVDefaultNullValue = "NULL"
 
+var CSVDefaultNullValues = []string{CSVDefaultNullValue, "null"}
+
 type DataMeshDataIOInterface interface {
 	Read(ctx context.Context, rc *utils.DataMeshRequestContext, w utils.RecordWriter) error
 
@@ -58,7 +60,7 @@ func DataProxyContentToFlightStreamCSV(data *datamesh.DomainData, r io.Reader, w
 	csvReader := csv.NewInferringReader(r,
 		csv.WithColumnTypes(colTypes),
 		csv.WithHeader(true),
-		csv.WithNullReader(true, CSVDefaultNullValue),
+		csv.WithNullReader(true, CSVDefaultNullValues...),
 		csv.WithChunk(1024),
 		csv.WithIncludeColumns(colNames),
 	)

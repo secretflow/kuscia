@@ -18,8 +18,6 @@ spec:
     transitMethod: THIRD-DOMAIN
     domain:
       domainID: {{.TRANSIT_DOMAIN}}
-  bodyEncryption:
-    algorithm: AES
   authenticationType: Token
   tokenConfig:
     tokenGenMethod: RSA-GEN

@@ -138,11 +138,26 @@ func Convert2ArrowColumnType(colType string) arrow.DataType {
 		return arrow.PrimitiveTypes.Date32
 	case "date64":
 		return arrow.PrimitiveTypes.Date64
+	case "date":
+		return arrow.PrimitiveTypes.Date32
+	case "datetime":
+		return arrow.PrimitiveTypes.Date64
+	case "time32":
+		return arrow.FixedWidthTypes.Time32s
+	case "time64":
+		return arrow.FixedWidthTypes.Time64us
+	case "timestamp":
+		return arrow.FixedWidthTypes.Timestamp_s
+	case "duration":
+		return arrow.FixedWidthTypes.Duration_s
 	case "bool":
 		return arrow.FixedWidthTypes.Boolean
 	// STRING UTF8 variable-length string as List<Char>
 	case "string", "str":
 		return arrow.BinaryTypes.String
+	// LARGE STRING UTF8 variable-length string as List<Char> with 64-bit offsets
+	case "large_string", "large_str", "large_utf8":
+		return arrow.BinaryTypes.LargeString
 	// Variable-length bytes (no guarantee of UTF8-ness)
 	case "binary":
 		return arrow.BinaryTypes.Binary
@@ -176,11 +191,23 @@ func Convert2DataMeshColumnType(colType arrow.DataType) string {
 		return "date32"
 	case arrow.PrimitiveTypes.Date64:
 		return "date64"
+	case arrow.FixedWidthTypes.Time32s, arrow.FixedWidthTypes.Time32ms:
+		return "time32"
+	case arrow.FixedWidthTypes.Time64us, arrow.FixedWidthTypes.Time64ns:
+		return "time64"
+	case arrow.FixedWidthTypes.Timestamp_s, arrow.FixedWidthTypes.Timestamp_ms,
+		arrow.FixedWidthTypes.Timestamp_us, arrow.FixedWidthTypes.Timestamp_ns:
+		return "timestamp"
+	case arrow.FixedWidthTypes.Duration_s, arrow.FixedWidthTypes.Duration_ms,
+		arrow.FixedWidthTypes.Duration_us, arrow.FixedWidthTypes.Duration_ns:
+		return "duration"
 	case arrow.FixedWidthTypes.Boolean:
 		return "bool"
 	// STRING UTF8 variable-length string as List<Char>
 	case arrow.BinaryTypes.String:
 		return "string"
+	case arrow.BinaryTypes.LargeString:
+		return "large_string"
 	// Variable-length bytes (no guarantee of UTF8-ness)
 	case arrow.BinaryTypes.Binary:
 		return "binary"

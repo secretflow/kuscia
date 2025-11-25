@@ -43,11 +43,11 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 	runtimeapi "k8s.io/cri-api/pkg/apis/runtime/v1"
 	crierror "k8s.io/cri-api/pkg/errors"
+	remote "k8s.io/cri-client/pkg"
+	"k8s.io/cri-client/pkg/logs"
+	"k8s.io/kubelet/pkg/types"
 	"k8s.io/kubernetes/pkg/credentialprovider"
-	"k8s.io/kubernetes/pkg/kubelet/cri/remote"
 	"k8s.io/kubernetes/pkg/kubelet/events"
-	"k8s.io/kubernetes/pkg/kubelet/kuberuntime/logs"
-	"k8s.io/kubernetes/pkg/kubelet/types"
 	"k8s.io/kubernetes/pkg/util/tail"
 	volumeutil "k8s.io/kubernetes/pkg/volume/util"
 
@@ -506,7 +506,7 @@ func (m *kubeGenericRuntimeManager) ReadLogs(ctx context.Context, path, containe
 	// Convert v1.PodLogOptions into internal log options.
 	opts := logs.NewLogOptions(apiOpts, time.Now())
 
-	return logs.ReadLogs(ctx, path, containerID, opts, m.runtimeService, stdout, stderr)
+	return logs.ReadLogs(ctx, nil, path, containerID, opts, m.runtimeService, stdout, stderr)
 }
 
 // readLastStringFromContainerLogs attempts to read up to the max log length from the end of the CRI log represented
