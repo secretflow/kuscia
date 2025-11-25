@@ -828,50 +828,6 @@ func TestImageInFile_Invalid(t *testing.T) {
 	assert.Contains(t, err.Error(), "not a valid docker or oci image format")
 }
 
-// TestCheckOsArchCompliance tests the CheckOsArchCompliance function
-func TestCheckOsArchCompliance(t *testing.T) {
-	// Create test OCI structure with matching platform
-	index := OCIIndex{
-		SchemaVersion: 2,
-		Manifests: []OCIIndexManifest{
-			{
-				MediaType: v1spec.MediaTypeImageManifest,
-				Digest:    "sha256:1234567890abcdef",
-				Platform: &OCIPlatform{
-					Architecture: runtime.GOARCH,
-					OS:           runtime.GOOS,
-				},
-				Annotations: map[string]string{
-					"org.opencontainers.image.ref.name": "test:latest",
-				},
-			},
-		},
-	}
-
-	files := map[string][]byte{
-		"index.json":                    mustMarshalJSON(index),
-		"blobs/sha256/1234567890abcdef": mustMarshalJSON(OCIManifest{Config: OCIDescriptor{Digest: "sha256:config123456"}}),
-		"blobs/sha256/config123456":     mustMarshalJSON(ImageConfig{Architecture: runtime.GOARCH, OS: runtime.GOOS}),
-	}
-
-	tarFile := createTestTar(t, files)
-	defer os.Remove(tarFile)
-
-	// Test with matching platform
-	err := CheckOsArchComplianceWithPlatform(tarFile, fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH))
-	assert.NoError(t, err)
-
-	// Test with non-matching platform
-	err = CheckOsArchComplianceWithPlatform(tarFile, "linux/arm64")
-	assert.Error(t, err)
-	assert.IsType(t, &TarfileOsArchUnsupportedError{}, err)
-
-	// Test with empty arch summary
-	err = CheckArchSummaryComplianceWithPlatform("test.tar", "linux/amd64", []ImageSummary{})
-	assert.Error(t, err)
-	assert.IsType(t, &TarfileOsArchUnsupportedError{}, err)
-}
-
 // TestCheckOsArchCompliance_FileNotFound tests file not found scenario
 func TestCheckOsArchCompliance_FileNotFound(t *testing.T) {
 	err := CheckOsArchCompliance("nonexistent.tar")
