@@ -438,7 +438,6 @@ func generateService(partyKitInfo *PartyKitInfo, serviceName string, port kuscia
 		common.AnnotationStickySessionTTL:    fmt.Sprintf("%ds", common.AnnotationStickySessionTTLValue),
 	}
 	// Check if sticky sessions are enabled
-	sessionAffinity := corev1.ServiceAffinityNone
 	sessionAffinityConfig := &corev1.SessionAffinityConfig{
 		ClientIP: &corev1.ClientIPConfig{
 			TimeoutSeconds: pointer.Int32(int32(common.AnnotationStickySessionTTLValue)),
@@ -455,7 +454,7 @@ func generateService(partyKitInfo *PartyKitInfo, serviceName string, port kuscia
 		Spec: corev1.ServiceSpec{
 			Type:                  corev1.ServiceTypeClusterIP,
 			ClusterIP:             "None",
-			SessionAffinity:       sessionAffinity,
+			SessionAffinity:       corev1.ServiceAffinityNone,
 			SessionAffinityConfig: sessionAffinityConfig,
 			Selector: map[string]string{
 				common.LabelKubernetesDeploymentName: partyKitInfo.dkInfo.deploymentName,
