@@ -36,10 +36,10 @@ msgstr "Currently, when Kuscia is deployed on K8s, privacy computing tasks suppo
 #: ../../deployment/K8s_deployment_kuscia/K8s_p2p_cn.md:9
 msgid "本教程默认以 RunK 模式来进行部署（需要能够有权限在宿主的 K8s 上拉起任务 Pod），RunP 模式的部署请参考 [使用 RunP 运行时部署节点](../deploy_with_runp_cn.md)，非 root 用户部署请参考[这里](./k8s_deploy_kuscia_with_rootless.md)。"
 msgstr "This tutorial uses RunK mode by default for deployment (requires permissions to create task Pods on the host K8s). For RunP mode deployment, please refer to [Deploy Nodes Using RunP Runtime](../deploy_with_runp_cn.md). For non-root user deployment, please refer to [here](./k8s_deploy_kuscia_with_rootless.md)."
-
 #: ../../deployment/K8s_deployment_kuscia/K8s_p2p_cn.md:11
 msgid "![k8s_master_lite_deploy](../../imgs/k8s_deploy_autonomy.png)"
-msgstr "![k8s_master_lite_deploy](../../imgs/k8s_deploy_autonomy.png)"
+msgstr "![k8s_master_lite_deploy](../../imgs/en_images/k8s_deploy_autonomy.png)"
+
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_p2p_cn.md:11
 msgid "k8s_master_lite_deploy"
