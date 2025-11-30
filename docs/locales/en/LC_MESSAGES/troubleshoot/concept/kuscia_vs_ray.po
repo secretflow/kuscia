@@ -65,7 +65,7 @@ msgstr ""
 "Unlike traditional applications, privacy computing typically involves 2 or more parties. The conventional approach requires each participant to write separate logic based on their perspective. At runtime, the program then executes the logic corresponding to its role."
 
 "So, can we develop privacy computing applications like traditional ones? As shown in the figure below, SecretFlow chose Ray to achieve this goal. This allows users to develop privacy computing applications from a god's-eye view."
-"![secretflow_developer_view](../../imgs/sf_dev_view.png)"
+"![secretflow_developer_view](../../imgs/en_images/sf_dev_view.png)"
 
 #: ../../troubleshoot/concept/kuscia_vs_ray.md:12
 msgid "secretflow_developer_view"

@@ -68,7 +68,7 @@ msgstr ""
 
 #: ../../reference/architecture_cn.md:13
 msgid "![Deployment Mode](../imgs/linkaged_network.png)"
-msgstr "![Deployment Mode](../imgs/linkaged_network.png)"
+msgstr "![Deployment Mode](../imgs/en_images/linkaged_network.png)"
 
 #: ../../reference/architecture_cn.md:13 ../../reference/architecture_cn.md:147
 #: ../../reference/architecture_cn.md:160

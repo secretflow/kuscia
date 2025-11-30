@@ -50,7 +50,7 @@ msgstr ""
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:11
 msgid "![k8s_master_lite_deploy](../../imgs/k8s_deploy_master_lite.png)"
-msgstr "![k8s_master_lite_deploy](../../imgs/k8s_deploy_master_lite.png)"
+msgstr "![k8s_master_lite_deploy](../../imgs/en_images/k8s_deploy_master_lite.png)"
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:11
 msgid "k8s_master_lite_deploy"
