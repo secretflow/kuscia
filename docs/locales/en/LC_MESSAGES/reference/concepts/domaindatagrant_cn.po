@@ -107,7 +107,7 @@ msgstr "`.metadata.namespace`: Indicates the namespace to which the DomainDataGr
 
 #: ../../reference/concepts/domaindatagrant_cn.md:44
 msgid "`.spec.author`：表示授权方节点 ID 。当前示例授权方节点为 `alice`。"
-msgstr "`.spec.author`: Indicates the grantor DomianID (`alice` here)."
+msgstr "`.spec.author`: Indicates the grantor DomainID (`alice` here)."
 
 #: ../../reference/concepts/domaindatagrant_cn.md:45
 msgid "`.spec.domainDataID`：表示 DomainDataGrant 所属的 DomainData。"
@@ -115,7 +115,7 @@ msgstr "`.spec.domainDataID`: Associates with the corresponding DomainData resou
 
 #: ../../reference/concepts/domaindatagrant_cn.md:46
 msgid "`.spec.grantDomain`：表示被授权的节点 ID 。当前示例授权方节点为 `bob`。"
-msgstr "`.spec.grantDomain`: Identifies the grantee DomianID (`bob` in this example)."
+msgstr "`.spec.grantDomain`: Identifies the grantee DomainID (`bob` in this example)."
 
 #: ../../reference/concepts/domaindatagrant_cn.md:48
 msgid ""
