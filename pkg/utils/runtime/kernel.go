@@ -41,22 +41,22 @@ type osKernel struct {
 func CurrentKernel() Kernel {
 	k := &osKernel{}
 
-	needGreaterThanOrEqualToDefaultValue, needLessThanOrEuqalToDefaultValue := false, true
+	needGreaterThanOrEqualToDefaultValue, needLessThanOrEqualToDefaultValue := false, true
 
 	k.params = append(k.params,
 		// maximum size of the SYN backlog queue in a TCP connection. (value >= 2048)
-		NewFileKernalParam("tcp_max_syn_backlog", "/proc/sys/net/ipv4/tcp_max_syn_backlog", 2048, needGreaterThanOrEqualToDefaultValue),
+		NewFileKernelParam("tcp_max_syn_backlog", "/proc/sys/net/ipv4/tcp_max_syn_backlog", 2048, needGreaterThanOrEqualToDefaultValue),
 		// wait accept queue size. (value >= 2048)
-		NewFileKernalParam("somaxconn", "/proc/sys/net/core/somaxconn", 2048, needGreaterThanOrEqualToDefaultValue),
+		NewFileKernelParam("somaxconn", "/proc/sys/net/core/somaxconn", 2048, needGreaterThanOrEqualToDefaultValue),
 		// tcp retry times, 5 --> 25.6s-51.2s, 15 --> 924.6s-1044.6s.  (value <= 5)
-		NewFileKernalParam("tcp_retries2", "/proc/sys/net/ipv4/tcp_retries2", 5, needLessThanOrEuqalToDefaultValue),
+		NewFileKernelParam("tcp_retries2", "/proc/sys/net/ipv4/tcp_retries2", 5, needLessThanOrEqualToDefaultValue),
 		// controls the behavior of TCP slow start when a connection remains idle for a certain period of time. set to 0, make keep-alive connection send quickly
 		// (value <= 0)
-		NewFileKernalParam("tcp_slow_start_after_idle", "/proc/sys/net/ipv4/tcp_slow_start_after_idle", 0, needLessThanOrEuqalToDefaultValue),
+		NewFileKernelParam("tcp_slow_start_after_idle", "/proc/sys/net/ipv4/tcp_slow_start_after_idle", 0, needLessThanOrEqualToDefaultValue),
 		// client reuse TIME_WAIT socket. 1 --> enable. (value >= 1)
-		NewFileKernalParam("tcp_tw_reuse", "/proc/sys/net/ipv4/tcp_tw_reuse", 1, needGreaterThanOrEqualToDefaultValue),
+		NewFileKernelParam("tcp_tw_reuse", "/proc/sys/net/ipv4/tcp_tw_reuse", 1, needGreaterThanOrEqualToDefaultValue),
 		// max open files. (value >= 102400)
-		NewFileKernalParam("file-max", "/proc/sys/fs/file-max", 102400, needGreaterThanOrEqualToDefaultValue),
+		NewFileKernelParam("file-max", "/proc/sys/fs/file-max", 102400, needGreaterThanOrEqualToDefaultValue),
 	)
 
 	return k
@@ -75,7 +75,7 @@ func errorParams(key, fileName string, err error) *KernelParam {
 	}
 }
 
-func NewFileKernalParam(key, fileName string, defaultValue int, defaultIsMaxValue bool) *KernelParam {
+func NewFileKernelParam(key, fileName string, defaultValue int, defaultIsMaxValue bool) *KernelParam {
 	c, err := os.ReadFile(fileName)
 	if err != nil {
 		nlog.Warnf("Read file(%s) failed with error: %s", fileName, err.Error())
