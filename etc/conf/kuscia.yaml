@@ -88,6 +88,7 @@ dataMesh:
       dataSourceTypes:                # the type of datasource that data proxy supported
         - "odps"                      # odps also call as Aliyun MaxCompute
         - "hive"
+        - "dameng"                    # dameng database
 # Note: Currently only a single odps data source configuration is supported. If two odps configurations are defined here, the latter one will override the previous one.
 #   - endpoint: "example-dataproxy-grpc:8024"
 #     dataSourceTypes:

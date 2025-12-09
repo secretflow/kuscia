@@ -70,6 +70,19 @@ func makeDomainDataSourceService(t *testing.T, conf *config.DataMeshConfig) IDom
 	return NewDomainDataSourceService(conf, makeConfigService(t))
 }
 
+func TestParseDataSourceURI_UnsupportedType(t *testing.T) {
+	info := &datamesh.DataSourceInfo{
+		Localfs: &datamesh.LocalDataSourceInfo{
+			Path: "/test/path",
+		},
+	}
+	uri, err := parseDataSourceURI("unsupported_type", info)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "not support")
+	assert.Contains(t, err.Error(), "unsupported_type")
+	assert.Empty(t, uri)
+}
+
 func makeConfigService(t *testing.T) cmservice.IConfigService {
 	privateKey, err := rsa.GenerateKey(rand.Reader, 1024)
 	assert.Nil(t, err)
