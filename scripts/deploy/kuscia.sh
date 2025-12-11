@@ -648,7 +648,9 @@ function dataproxy_config() {
   dataProxyList:
     - endpoint: "dataproxy-grpc:8023"
       dataSourceTypes:
-        - "odps"'
+        - "odps"
+        - "hive"
+        - "dameng"'
   if ! grep -q "${data_proxy_config}" "${kuscia_config_file}"; then
      echo "${data_proxy_config}" >> "${kuscia_config_file}"
   fi
