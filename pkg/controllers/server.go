@@ -158,7 +158,7 @@ func (s *Server) onStartedLeading(ctx context.Context) {
 		KusciaJobGCDurationHours:    s.options.KusciaJobGCDurationHours,
 	}
 	for _, cc := range s.controllerConstructions {
-		controller := cc.NewControler(ctx, config)
+		controller := cc.NewController(ctx, config)
 		nlog.Infof("Run controller %v", controller.Name())
 		go func(controller IController) {
 			if err := controller.Run(s.options.Workers); err != nil {

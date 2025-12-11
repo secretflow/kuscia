@@ -70,7 +70,7 @@ func NewDomainRouteMod(reporter *util.Reporter, kusciaAPIConn *grpc.ClientConn, 
 }
 
 func (m *DomainRouteMod) Run(ctx context.Context) error {
-	nlog.Infof("diagnose <%s-%s> network statitsics", m.source, m.destination)
+	nlog.Infof("diagnose <%s-%s> network statistics", m.source, m.destination)
 	// crd config diagnose
 	if err := m.crdMod.Run(ctx); err != nil {
 		return err
@@ -85,7 +85,7 @@ func (m *DomainRouteMod) Run(ctx context.Context) error {
 
 	// display result
 	table := m.reporter.NewTableWriter()
-	table.SetTitle(fmt.Sprintf("NETWORK STATSTICS(%s-%s):", m.source, m.destination))
+	table.SetTitle(fmt.Sprintf("NETWORK STATISTICS(%s-%s):", m.source, m.destination))
 	table.AddHeader([]string{"NAME", "DETECTED VALUE", "THRESHOLD", "RESULT", "INFORMATION"})
 
 	for _, taskOutput := range results {

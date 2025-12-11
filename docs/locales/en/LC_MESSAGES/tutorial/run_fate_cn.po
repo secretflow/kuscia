@@ -88,7 +88,7 @@ msgstr "Adapter Image"
 
 #: ../../tutorial/run_fate_cn.md:38
 msgid ""
-"每一个 KusciaTask 会通过 AppImage 中的 adapater 镜像向 FATE 集群发起任务，并保持 KusciaTask "
+"每一个 KusciaTask 会通过 AppImage 中的 adapter 镜像向 FATE 集群发起任务，并保持 KusciaTask "
 "状态与 FATE 任务的状态一致。"
 msgstr ""
 "Each KusciaTask will initiate a task to the FATE cluster using the adapter image within the AppImage and will maintain the KusciaTask status consistent with the FATE task status."

@@ -26,8 +26,8 @@ import (
 )
 
 type ControllerConstruction struct {
-	NewControler NewControllerFunc
-	CRDNames     []string
+	NewController NewControllerFunc
+	CRDNames      []string
 }
 
 type NewControllerFunc func(ctx context.Context, kubeClient kubernetes.Interface, kusciaClient kusciaclientset.Interface, eventRecorder record.EventRecorder) IController

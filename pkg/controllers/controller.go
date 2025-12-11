@@ -33,8 +33,8 @@ type IController interface {
 }
 
 type ControllerConstruction struct {
-	NewControler NewControllerFunc
-	CRDNames     []string
+	NewController NewControllerFunc
+	CRDNames      []string
 }
 
 type NewControllerFunc func(ctx context.Context, config ControllerConfig) IController

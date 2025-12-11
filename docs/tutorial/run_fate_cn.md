@@ -35,7 +35,7 @@ make fate-adaptor-app-image
 
 #### adapter 镜像
 
-每一个 KusciaTask 会通过 AppImage 中的 adapater 镜像向 FATE 集群发起任务，并保持 KusciaTask 状态与 FATE 任务的状态一致。
+每一个 KusciaTask 会通过 AppImage 中的 adapter 镜像向 FATE 集群发起任务，并保持 KusciaTask 状态与 FATE 任务的状态一致。
 
 以中心化组网的 Kuscia 为例，整个过程为：
 

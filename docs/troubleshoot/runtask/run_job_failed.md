@@ -8,7 +8,7 @@
 
 ### 检查网络授权
 
-大部分任务失败问题都是网络问题，检查网络授权可以登录到容器（中心化模式在 master 容器、点对点模式在 automony 容器）并执行 `kubectl get cdr` 命令查看授权信息，READY 为 True 时表明通信正常，为空时表明通信异常，可以先看下 HOST 和端口是否正确或者执行 `kubectl get cdr ${cdr_name} -oyaml` 命令看下详细信息，参数确认无误仍无法正常通信请参考[授权错误排查](../network/network_authorization_check.md)。
+大部分任务失败问题都是网络问题，检查网络授权可以登录到容器（中心化模式在 master 容器、点对点模式在 autonomy 容器）并执行 `kubectl get cdr` 命令查看授权信息，READY 为 True 时表明通信正常，为空时表明通信异常，可以先看下 HOST 和端口是否正确或者执行 `kubectl get cdr ${cdr_name} -oyaml` 命令看下详细信息，参数确认无误仍无法正常通信请参考[授权错误排查](../network/network_authorization_check.md)。
 
 ### 检查内核参数
 

@@ -63,46 +63,46 @@ func NewControllersModule(i *ModuleRuntimeConfigs) (Module, error) {
 		opt, i.Clients,
 		[]controllers.ControllerConstruction{
 			{
-				NewControler: taskresourcegroup.NewController,
-				CRDNames:     []string{controllers.CRDTaskResourcesGroupsName, controllers.CRDTaskResourcesName},
+				NewController: taskresourcegroup.NewController,
+				CRDNames:      []string{controllers.CRDTaskResourcesGroupsName, controllers.CRDTaskResourcesName},
 			},
 			{
-				NewControler: domain.NewController,
-				CRDNames:     []string{controllers.CRDDomainsName},
+				NewController: domain.NewController,
+				CRDNames:      []string{controllers.CRDDomainsName},
 			},
 			{
-				NewControler: kusciatask.NewController,
-				CRDNames:     []string{controllers.CRDKusciaTasksName, controllers.CRDAppImagesName},
+				NewController: kusciatask.NewController,
+				CRDNames:      []string{controllers.CRDKusciaTasksName, controllers.CRDAppImagesName},
 			},
 			{
-				NewControler: domainroute.NewController,
-				CRDNames:     []string{controllers.CRDDomainsName, controllers.CRDDomainRoutesName, controllers.CRDGatewaysName},
+				NewController: domainroute.NewController,
+				CRDNames:      []string{controllers.CRDDomainsName, controllers.CRDDomainRoutesName, controllers.CRDGatewaysName},
 			},
 			{
-				NewControler: clusterdomainroute.NewController,
-				CRDNames:     []string{controllers.CRDDomainsName, controllers.CRDClusterDomainRoutesName, controllers.CRDDomainRoutesName, controllers.CRDGatewaysName},
+				NewController: clusterdomainroute.NewController,
+				CRDNames:      []string{controllers.CRDDomainsName, controllers.CRDClusterDomainRoutesName, controllers.CRDDomainRoutesName, controllers.CRDGatewaysName},
 			},
 			{
-				NewControler: kusciajob.NewController,
-				CRDNames:     []string{controllers.CRDKusciaJobsName},
+				NewController: kusciajob.NewController,
+				CRDNames:      []string{controllers.CRDKusciaJobsName},
 			},
 			{
-				NewControler: kusciadeployment.NewController,
-				CRDNames:     []string{controllers.CRDKusciaDeploymentsName},
+				NewController: kusciadeployment.NewController,
+				CRDNames:      []string{controllers.CRDKusciaDeploymentsName},
 			},
 			{
-				NewControler: domaindata.NewController,
-				CRDNames:     []string{controllers.CRDDomainsName, controllers.CRDDomainDataGrantsName},
+				NewController: domaindata.NewController,
+				CRDNames:      []string{controllers.CRDDomainsName, controllers.CRDDomainDataGrantsName},
 			},
 			{
-				NewControler: portflake.NewController,
+				NewController: portflake.NewController,
 			},
 
 			{
-				NewControler: garbagecollection.NewKusciaJobGCController,
+				NewController: garbagecollection.NewKusciaJobGCController,
 			},
 			{
-				NewControler: garbagecollection.NewKusciaDomainDataGCController,
+				NewController: garbagecollection.NewKusciaDomainDataGCController,
 			},
 		},
 	), nil
