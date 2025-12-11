@@ -419,7 +419,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/domain/batchQuery' \
 | 字段                   | 类型     | 描述                                           |
 |----------------------|--------|----------------------------------------------|
 | token                | string | 部署令牌                                         |
-| state                | string | 部署令牌状态 used, unsed                           |
+| state                | string | 部署令牌状态 used, unused                           |
 | last_transition_time | string | 最后更新时间，RFC3339 格式（e.g. 2006-01-02T15:04:05Z） |
 
 {#auth-center}

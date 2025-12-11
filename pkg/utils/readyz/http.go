@@ -23,15 +23,15 @@ import (
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
-type HTTPResponseBodyChcker func(body []byte) error
+type HTTPResponseBodyChecker func(body []byte) error
 
 type HTTPReadyZ struct {
 	uri            string
 	expectHTTPCode int
-	bodyChecker    HTTPResponseBodyChcker
+	bodyChecker    HTTPResponseBodyChecker
 }
 
-func NewHTTPReadyZ(uri string, code int, body HTTPResponseBodyChcker) ReadyZ {
+func NewHTTPReadyZ(uri string, code int, body HTTPResponseBodyChecker) ReadyZ {
 	return &HTTPReadyZ{
 		uri:            uri,
 		expectHTTPCode: code,

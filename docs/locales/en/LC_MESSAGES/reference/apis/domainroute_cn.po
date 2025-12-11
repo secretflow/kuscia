@@ -477,7 +477,7 @@ msgstr "Route List"
 
 #: ../../reference/apis/domainroute_cn.md:291
 msgid "响应（BatchQueryDomainRouteStatusResponse）"
-msgstr "Response(BatchQueryDomainRouteStatusRespons)"
+msgstr "Response(BatchQueryDomainRouteStatusResponse)"
 
 #: ../../reference/apis/domainroute_cn.md
 msgid "BatchQueryDomainRouteStatusResponseData"
