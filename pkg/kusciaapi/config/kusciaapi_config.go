@@ -54,6 +54,8 @@ type KusciaAPIConfig struct {
 	InterceptorLog   *nlog.NLog                `yaml:"-"`
 	StdoutPath       string                    `yaml:"-"`
 	NodeName         string                    `yaml:"-"`
+	// GCConfigManager is the configuration manager for GC operations
+	GCConfigManager interface{} `yaml:"-"`
 }
 
 type TokenConfig struct {

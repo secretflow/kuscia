@@ -22,6 +22,7 @@ import (
 
 	"github.com/secretflow/kuscia/pkg/confmanager/driver"
 	cmservice "github.com/secretflow/kuscia/pkg/confmanager/service"
+	"github.com/secretflow/kuscia/pkg/controllers/garbagecollection"
 	kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
 	informers "github.com/secretflow/kuscia/pkg/crd/informers/externalversions"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/bean"
@@ -55,8 +56,12 @@ func Run(ctx context.Context, kusciaAPIConfig *config.KusciaAPIConfig, kusciaCli
 		return err
 	}
 
+	// 获取 GC 管理器 (从全局变量获取,在 controllers 模块初始化时注册)
+	gcConfigManager := kusciaAPIConfig.GCConfigManager
+	gcTriggerManager := garbagecollection.GetGlobalKusciaJobGCTriggerManager()
+
 	// inject http server bean
-	httpServer := bean.NewHTTPServerBean(kusciaAPIConfig, configService)
+	httpServer := bean.NewHTTPServerBean(kusciaAPIConfig, configService, gcConfigManager, gcTriggerManager)
 	serverName := httpServer.ServerName()
 	err = appEngine.UseBeanWithConfig(serverName, httpServer)
 	if err != nil {

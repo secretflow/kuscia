@@ -156,6 +156,7 @@ func (s *Server) onStartedLeading(ctx context.Context) {
 		KddGarbageCollectionEnabled: s.options.KddGarbageCollectionEnabled,
 		DomainDataGCDurationHours:   s.options.DomainDataGCDurationHours,
 		KusciaJobGCDurationHours:    s.options.KusciaJobGCDurationHours,
+		GCConfigManager:             s.options.GCConfigManager,
 	}
 	for _, cc := range s.controllerConstructions {
 		controller := cc.NewControler(ctx, config)

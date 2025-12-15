@@ -33,3 +33,8 @@ p, domain, /api/v1/serving/status/batchQuery, POST
 
 p, domain, /api/v1/log/task/query, POST
 p, domain, /api/v1/log/node/query, POST
+
+p, master, /api/v1/gc/trigger, POST
+p, master, /api/v1/gc/config/update, POST
+p, master, /api/v1/gc/config/query, POST
+p, master, /api/v1/gc/status, POST

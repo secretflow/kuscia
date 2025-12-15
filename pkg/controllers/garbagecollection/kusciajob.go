@@ -17,6 +17,7 @@ package garbagecollection
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -48,7 +49,18 @@ type KusciaJobGCController struct {
 	kusciaTaskSynced      cache.InformerSynced
 	kusciaJobSynced       cache.InformerSynced
 	namespaceSynced       cache.InformerSynced
-	kusciaJobGCDuration   time.Duration
+
+	// 动态配置字段
+	mu                  sync.RWMutex
+	kusciaJobGCDuration time.Duration
+	gcBatchSize         int
+	gcBatchInterval     time.Duration
+
+	// 触发管理器
+	triggerManager *GCTriggerManager
+
+	// 配置管理器
+	configManager *GCConfigManager
 }
 
 func NewKusciaJobGCController(ctx context.Context, config controllers.ControllerConfig) controllers.IController {
@@ -60,6 +72,7 @@ func NewKusciaJobGCController(ctx context.Context, config controllers.Controller
 	kusciaJobInformer := kusciaInformerFactory.Kuscia().V1alpha1().KusciaJobs()
 	kusciaTaskInformer := kusciaInformerFactory.Kuscia().V1alpha1().KusciaTasks()
 	namespaceInformer := kubeInformerFactory.Core().V1().Namespaces()
+
 	// Use configured duration, if 0 use default 720 hours (30 days)
 	gcDuration := defaultGCDuration
 	if config.KusciaJobGCDurationHours > 0 {
@@ -75,9 +88,37 @@ func NewKusciaJobGCController(ctx context.Context, config controllers.Controller
 		kusciaJobSynced:       kusciaJobInformer.Informer().HasSynced,
 		namespaceSynced:       namespaceInformer.Informer().HasSynced,
 		kusciaJobGCDuration:   gcDuration,
+		gcBatchSize:           batchSize,
+		gcBatchInterval:       5 * time.Second,
 	}
 	gcController.ctx, gcController.cancel = context.WithCancel(ctx)
+
+	// 创建触发管理器
+	gcController.triggerManager = NewGCTriggerManager(gcController)
+
+	// 注册到全局 TriggerManager
+	SetGlobalKusciaJobGCTriggerManager(gcController.triggerManager)
+
+	// 如果提供了 GCConfigManager,设置它
+	if config.GCConfigManager != nil {
+		if cm, ok := config.GCConfigManager.(*GCConfigManager); ok {
+			gcController.SetConfigManager(cm)
+		}
+	}
+
 	return gcController
+}
+
+// SetConfigManager 设置配置管理器
+func (kgc *KusciaJobGCController) SetConfigManager(cm *GCConfigManager) {
+	kgc.configManager = cm
+	// 注册配置更新回调
+	cm.RegisterUpdateCallback(kgc.OnConfigUpdate)
+}
+
+// GetTriggerManager 获取触发管理器
+func (kgc *KusciaJobGCController) GetTriggerManager() *GCTriggerManager {
+	return kgc.triggerManager
 }
 
 func (kgc *KusciaJobGCController) Run(flag int) error {
@@ -111,7 +152,11 @@ func (kgc *KusciaJobGCController) Name() string {
 }
 
 func (kgc *KusciaJobGCController) GarbageCollectKusciaJob(ctx context.Context, ticker *time.Ticker) {
-	nlog.Infof("KusciaJob GC Duration is %v", kgc.kusciaJobGCDuration)
+	kgc.mu.RLock()
+	gcDuration := kgc.kusciaJobGCDuration
+	kgc.mu.RUnlock()
+
+	nlog.Infof("KusciaJob GC Duration is %v", gcDuration)
 	if ticker == nil {
 		ticker = time.NewTicker(10 * time.Minute)
 	}
@@ -121,27 +166,101 @@ func (kgc *KusciaJobGCController) GarbageCollectKusciaJob(ctx context.Context, t
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			kusciaJobs, _ := kgc.kusciaJobLister.KusciaJobs(common.KusciaCrossDomain).List(labels.Everything())
-			kusciaJobClient := kgc.kusciaClient.KusciaV1alpha1().KusciaJobs(common.KusciaCrossDomain)
-			for i, kusciaJob := range kusciaJobs {
-				if kusciaJob.Status.CompletionTime != nil {
-					kusciaJobTime := kusciaJob.Status.CompletionTime.Time
-					durationTime := time.Since(kusciaJobTime)
-					if durationTime >= kgc.kusciaJobGCDuration {
-						err := kusciaJobClient.Delete(ctx, kusciaJob.Name, metav1.DeleteOptions{})
-						if err != nil {
-							nlog.Errorf("Delete outdated kusciaJob `%s` error: %v", kusciaJob.Name, err)
-							continue
-						}
-						nlog.Infof("Delete outdated kusciaJob `%s` (Outdated duration %v)", kusciaJob.Name, durationTime)
-
-					}
-				}
-				if (i+1)%batchSize == 0 {
-					nlog.Info("Kuscia Job GC Sleeping for 5 second...")
-					time.Sleep(5 * time.Second)
-				}
+			// 通过 TriggerManager 执行定时清理
+			_, err := kgc.triggerManager.TriggerScheduled(ctx)
+			if err != nil {
+				nlog.Errorf("Scheduled GC failed: %v", err)
 			}
 		}
 	}
+}
+
+// RunOnce 执行一次清理 (实现 GarbageCollector 接口)
+func (kgc *KusciaJobGCController) RunOnce(ctx context.Context) (*GCResult, error) {
+	startTime := time.Now()
+	result := &GCResult{
+		ControllerName: kgc.Name(),
+		StartTime:      startTime,
+	}
+
+	// 读取当前配置
+	kgc.mu.RLock()
+	gcDuration := kgc.kusciaJobGCDuration
+	batchSize := kgc.gcBatchSize
+	batchInterval := kgc.gcBatchInterval
+	kgc.mu.RUnlock()
+
+	nlog.Infof("Starting KusciaJob GC: gcDuration=%v, batchSize=%d, batchInterval=%v",
+		gcDuration, batchSize, batchInterval)
+
+	// 列出所有 KusciaJob
+	kusciaJobs, err := kgc.kusciaJobLister.KusciaJobs(common.KusciaCrossDomain).List(labels.Everything())
+	if err != nil {
+		result.EndTime = time.Now()
+		result.Duration = time.Since(startTime)
+		return result, fmt.Errorf("failed to list KusciaJobs: %v", err)
+	}
+
+	nlog.Infof("Found %d KusciaJobs in namespace %s", len(kusciaJobs), common.KusciaCrossDomain)
+
+	deletedCount := 0
+	errorCount := 0
+	kusciaJobClient := kgc.kusciaClient.KusciaV1alpha1().KusciaJobs(common.KusciaCrossDomain)
+
+	for i, kusciaJob := range kusciaJobs {
+		// 检查是否已完成且超过保留期
+		if kusciaJob.Status.CompletionTime != nil {
+			kusciaJobTime := kusciaJob.Status.CompletionTime.Time
+			durationTime := time.Since(kusciaJobTime)
+			if durationTime >= gcDuration {
+				nlog.Infof("Deleting KusciaJob %s (completed %v ago)",
+					kusciaJob.Name, durationTime)
+
+				err := kusciaJobClient.Delete(ctx, kusciaJob.Name, metav1.DeleteOptions{})
+				if err != nil {
+					nlog.Errorf("Failed to delete KusciaJob %s: %v", kusciaJob.Name, err)
+					errorCount++
+				} else {
+					deletedCount++
+				}
+			}
+		}
+
+		// 批处理间隔
+		if (i+1)%batchSize == 0 && batchInterval > 0 {
+			nlog.Infof("Processed %d jobs, sleeping %v", i+1, batchInterval)
+			time.Sleep(batchInterval)
+		}
+	}
+
+	result.DeletedCount = deletedCount
+	result.ErrorCount = errorCount
+	result.EndTime = time.Now()
+	result.Duration = time.Since(startTime)
+
+	nlog.Infof("KusciaJob GC completed: deleted=%d, errors=%d, duration=%v",
+		deletedCount, errorCount, result.Duration)
+
+	return result, nil
+}
+
+// OnConfigUpdate 配置更新回调
+func (kgc *KusciaJobGCController) OnConfigUpdate(oldConfig, newConfig *GCConfig) error {
+	kgc.mu.Lock()
+	defer kgc.mu.Unlock()
+
+	oldDuration := kgc.kusciaJobGCDuration
+	oldBatchSize := kgc.gcBatchSize
+	oldBatchInterval := kgc.gcBatchInterval
+
+	kgc.kusciaJobGCDuration = time.Duration(newConfig.KusciaJobGC.DurationHours) * time.Hour
+	kgc.gcBatchSize = newConfig.KusciaJobGC.BatchSize
+	kgc.gcBatchInterval = time.Duration(newConfig.KusciaJobGC.BatchInterval) * time.Second
+
+	nlog.Infof("KusciaJob GC config updated: duration=%v->%v, batchSize=%d->%d, batchInterval=%v->%v",
+		oldDuration, kgc.kusciaJobGCDuration,
+		oldBatchSize, kgc.gcBatchSize,
+		oldBatchInterval, kgc.gcBatchInterval)
+
+	return nil
 }

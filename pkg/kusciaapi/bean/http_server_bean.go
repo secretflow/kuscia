@@ -28,6 +28,7 @@ import (
 	"github.com/secretflow/kuscia/pkg/common"
 	"github.com/secretflow/kuscia/pkg/confmanager/handler/httphandler/certificate"
 	cmservice "github.com/secretflow/kuscia/pkg/confmanager/service"
+	"github.com/secretflow/kuscia/pkg/controllers/garbagecollection"
 	apiconfig "github.com/secretflow/kuscia/pkg/kusciaapi/config"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/handler/httphandler/appimage"
 	handlerconfig "github.com/secretflow/kuscia/pkg/kusciaapi/handler/httphandler/config"
@@ -36,6 +37,7 @@ import (
 	"github.com/secretflow/kuscia/pkg/kusciaapi/handler/httphandler/domaindatagrant"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/handler/httphandler/domaindatasource"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/handler/httphandler/domainroute"
+	"github.com/secretflow/kuscia/pkg/kusciaapi/handler/httphandler/gc"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/handler/httphandler/health"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/handler/httphandler/job"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/handler/httphandler/log"
@@ -62,9 +64,18 @@ type httpServerBean struct {
 	externalGinBean *beans.GinBean
 	internalGinBean *beans.GinBean
 	cmConfigService cmservice.IConfigService
+
+	// 新增: GC 管理器
+	gcConfigManager  *garbagecollection.GCConfigManager
+	gcTriggerManager *garbagecollection.GCTriggerManager
 }
 
-func NewHTTPServerBean(config *apiconfig.KusciaAPIConfig, cmConfigService cmservice.IConfigService) *httpServerBean { // nolint: golint
+func NewHTTPServerBean(
+	config *apiconfig.KusciaAPIConfig,
+	cmConfigService cmservice.IConfigService,
+	gcConfigManager *garbagecollection.GCConfigManager,
+	gcTriggerManager *garbagecollection.GCTriggerManager,
+) *httpServerBean { // nolint: golint
 	return &httpServerBean{
 		config: config,
 		externalGinBean: &beans.GinBean{
@@ -84,7 +95,9 @@ func NewHTTPServerBean(config *apiconfig.KusciaAPIConfig, cmConfigService cmserv
 			Debug:         config.Debug,
 			GinBeanConfig: convertToInternalGinConf(config),
 		},
-		cmConfigService: cmConfigService,
+		cmConfigService:  cmConfigService,
+		gcConfigManager:  gcConfigManager,
+		gcTriggerManager: gcTriggerManager,
 	}
 }
 
@@ -176,6 +189,10 @@ func (s *httpServerBean) registerGroupRoutes(e framework.ConfBeanRegistry, bean 
 	certService := newCertService(s.config)
 	configService := service.NewConfigService(s.config, s.cmConfigService)
 	logService := service.NewLogService(s.config)
+	var gcService service.IGCService
+	if s.gcConfigManager != nil && s.gcTriggerManager != nil {
+		gcService = service.NewGCService(s.gcConfigManager, s.gcTriggerManager)
+	}
 	// define router groups
 	groupsRouters := []*router.GroupRouters{
 		// job group routes
@@ -535,6 +552,31 @@ func (s *httpServerBean) registerGroupRoutes(e framework.ConfBeanRegistry, bean 
 				},
 			},
 		},
+		{
+			Group: "api/v1/gc",
+			Routes: []*router.Router{
+				{
+					HTTPMethod:   http.MethodPost,
+					RelativePath: "trigger",
+					Handlers:     []gin.HandlerFunc{createGCHandler(gcService, "trigger")},
+				},
+				{
+					HTTPMethod:   http.MethodPost,
+					RelativePath: "config/update",
+					Handlers:     []gin.HandlerFunc{createGCHandler(gcService, "update")},
+				},
+				{
+					HTTPMethod:   http.MethodPost,
+					RelativePath: "config/query",
+					Handlers:     []gin.HandlerFunc{createGCHandler(gcService, "query")},
+				},
+				{
+					HTTPMethod:   http.MethodPost,
+					RelativePath: "status",
+					Handlers:     []gin.HandlerFunc{createGCHandler(gcService, "status")},
+				},
+			},
+		},
 	}
 
 	// register router groups to httpEg
@@ -624,5 +666,36 @@ func convertToInternalGinConf(conf *apiconfig.KusciaAPIConfig) beans.GinBeanConf
 		IdleTimeout:     &conf.IdleTimeout,
 		MaxHeaderBytes:  nil,
 		TLSServerConfig: nil,
+	}
+}
+
+func createGCHandler(gcService service.IGCService, handlerType string) gin.HandlerFunc {
+	if gcService == nil {
+		return func(c *gin.Context) {
+			c.JSON(http.StatusServiceUnavailable, service.Status{
+				Code:    -1,
+				Message: "GC service not available",
+			})
+		}
+	}
+
+	handler := gc.NewGCHandler(gcService)
+
+	switch handlerType {
+	case "trigger":
+		return handler.TriggerGC
+	case "update":
+		return handler.UpdateGCConfig
+	case "query":
+		return handler.QueryGCConfig
+	case "status":
+		return handler.QueryGCStatus
+	default:
+		return func(c *gin.Context) {
+			c.JSON(http.StatusNotFound, service.Status{
+				Code:    -1,
+				Message: "Unknown handler type",
+			})
+		}
 	}
 }

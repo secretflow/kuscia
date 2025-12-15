@@ -79,6 +79,7 @@ func NewKusciaAPI(d *ModuleRuntimeConfigs) (Module, error) {
 	kusciaAPIConfig.Protocol = d.Protocol
 	kusciaAPIConfig.StdoutPath = d.Agent.StdoutPath
 	kusciaAPIConfig.NodeName = d.Agent.Node.NodeName
+	kusciaAPIConfig.GCConfigManager = d.GCConfigManager
 
 	protocol := kusciaAPIConfig.Protocol
 	if protocol == "" {

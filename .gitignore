@@ -30,5 +30,8 @@ bazel-*
 # Python virtualenv
 .venv
 .DS_Store
+.claude
+.GC_FEATURE_README.md
+.GC_INTEGRATION_SUMMARY.md
 
 **.mo

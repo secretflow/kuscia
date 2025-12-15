@@ -78,4 +78,6 @@ type ControllerConfig struct {
 	DomainDataGCDurationHours int
 	// KusciaJobGCDurationHours specifies retention hours for completed kuscia jobs
 	KusciaJobGCDurationHours int
+	// GCConfigManager is the configuration manager for GC operations
+	GCConfigManager interface{}
 }

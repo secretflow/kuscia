@@ -29,6 +29,7 @@ import (
 	"github.com/secretflow/kuscia/cmd/kuscia/confloader"
 	"github.com/secretflow/kuscia/pkg/agent/config"
 	"github.com/secretflow/kuscia/pkg/common"
+	"github.com/secretflow/kuscia/pkg/controllers/garbagecollection"
 	trconfig "github.com/secretflow/kuscia/pkg/transport/config"
 	"github.com/secretflow/kuscia/pkg/utils/kubeconfig"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
@@ -59,6 +60,10 @@ type ModuleRuntimeConfigs struct {
 	DomainCertByMasterValue atomic.Value // the value is <*x509.Certificate>
 	LogConfig               *nlog.LogConfig
 	Logrorate               confloader.LogrotateConfig
+
+	// GC 管理器
+	GCConfigManager  *garbagecollection.GCConfigManager
+	GCTriggerManager *garbagecollection.GCTriggerManager
 }
 
 func (d *ModuleRuntimeConfigs) Close() {

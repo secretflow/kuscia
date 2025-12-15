@@ -16,6 +16,8 @@
 package modules
 
 import (
+	"context"
+
 	"github.com/secretflow/kuscia/pkg/controllers"
 	"github.com/secretflow/kuscia/pkg/controllers/clusterdomainroute"
 	"github.com/secretflow/kuscia/pkg/controllers/domain"
@@ -27,9 +29,42 @@ import (
 	"github.com/secretflow/kuscia/pkg/controllers/kusciatask"
 	"github.com/secretflow/kuscia/pkg/controllers/portflake"
 	"github.com/secretflow/kuscia/pkg/controllers/taskresourcegroup"
+	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
 func NewControllersModule(i *ModuleRuntimeConfigs) (Module, error) {
+	ctx := context.Background()
+
+	// 初始化 GC ConfigMap
+	namespace := "kuscia-system"
+	if i.DomainID != "" {
+		namespace = i.DomainID
+	}
+
+	if err := garbagecollection.InitGCConfigMap(ctx, i.Clients.KubeClient, namespace); err != nil {
+		nlog.Warnf("Failed to init GC ConfigMap: %v", err)
+	}
+
+	// 创建 GC ConfigManager
+	gcConfigManager, err := garbagecollection.NewGCConfigManager(
+		i.Clients.KubeClient,
+		namespace,
+		garbagecollection.DefaultConfigMapName,
+	)
+	if err != nil {
+		nlog.Warnf("Failed to create GC ConfigManager: %v, GC API will not be available", err)
+	} else {
+		// 启动 ConfigManager
+		go func() {
+			if err := gcConfigManager.Start(ctx); err != nil {
+				nlog.Errorf("Failed to start GC ConfigManager: %v", err)
+			}
+		}()
+
+		// 存储到模块配置中
+		i.GCConfigManager = gcConfigManager
+	}
+
 	// Parse garbage collection configuration
 	kddGcEnabled := false
 	gcDurationHours := 0
@@ -57,9 +92,10 @@ func NewControllersModule(i *ModuleRuntimeConfigs) (Module, error) {
 		KddGarbageCollectionEnabled: kddGcEnabled,
 		DomainDataGCDurationHours:   gcDurationHours,
 		KusciaJobGCDurationHours:    kjGcDurationHours,
+		GCConfigManager:             i.GCConfigManager,
 	}
 
-	return controllers.NewServer(
+	server := controllers.NewServer(
 		opt, i.Clients,
 		[]controllers.ControllerConstruction{
 			{
@@ -105,5 +141,10 @@ func NewControllersModule(i *ModuleRuntimeConfigs) (Module, error) {
 				NewControler: garbagecollection.NewKusciaDomainDataGCController,
 			},
 		},
-	), nil
+	)
+
+	// 注意: TriggerManager 会在 KusciaJobGCController 初始化时自动注册到全局变量
+	// 在 Server 启动后,KusciaAPI 可以通过 garbagecollection.GetGlobalKusciaJobGCTriggerManager() 获取
+
+	return server, nil
 }
