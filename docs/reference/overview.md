@@ -49,7 +49,7 @@ Kuscia 除解决以上问题外，也提供了任务流调度、多引擎协同�
 
 隐语是从蚂蚁集团内部使用隐私计算技术助力业务发展的经验中沉淀而来的。在过往的隐私计算技术落地实际业务过程中共经历了三个时期：手动拉起任务时期、Coordinator 发起任务时期、Kuscia 编排任务时期。
 
-<img src="../imgs/kuscia_evolution.png" alt="Kuscia Evolution" style="max-width: 100%; height: auto;">
+<img src="../imgs/en_images/kuscia_evolution.png" alt="Kuscia Evolution" style="max-width: 100%; height: auto;">
 
 ### 手动拉起任务时期
 
@@ -68,7 +68,7 @@ Kuscia 编排任务时期，即当前开源的 Kuscia 。经历了 Coordinator �
 - 框架层：Kuscia聚焦于解决隐私计算技术工业化生产落地可能遇到的共性问题（如跨域的网络互通、任务编排、异构数据源、多引擎集成、互联互通等问题）。
 - 引擎层：完成核心的隐私计算任务，如 PSI 求交，PIR，隐私保护的特征处理、LR XGB 模型训练、模型预测等。
 
-<img src="../imgs/kuscia_layer.png" alt="Kuscia Layer" style="max-width: 100%; height: auto;">
+<img src="../imgs/en_images/kuscia_layer.png" alt="Kuscia Layer" style="max-width: 100%; height: auto;">
 
 通过这样的分层设计，让每一层聚焦于自己本层的核心职责。平台层专注于终端用户体验及实际的业务场景适配。Kuscia 层专注于解决隐私计算技术生产落地遇到的问题，引擎开发者专注于隐私计算任务核心逻辑的开发，无需考虑复杂的跨域网络环境及不同机构可能存在的异构数据源等问题。
 
