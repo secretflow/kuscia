@@ -125,7 +125,7 @@ kubectl get domain
 #### 查看某个 Domain 的详细信息
 
 ```shell
-kubectl get domain {domian_name} -o yaml
+kubectl get domain {domain_name} -o yaml
 ```
 
 - {domain_name} 为要查看 Domain 的名称。
