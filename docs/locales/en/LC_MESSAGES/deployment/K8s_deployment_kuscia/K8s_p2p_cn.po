@@ -39,7 +39,7 @@ msgstr "This tutorial uses RunK mode by default for deployment (requires permiss
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_p2p_cn.md:11
 msgid "![k8s_master_lite_deploy](../../imgs/k8s_deploy_autonomy.png)"
-msgstr "![k8s_master_lite_deploy](../../imgs/k8s_deploy_autonomy.png)"
+msgstr "![k8s_master_lite_deploy](../../imgs/en_images/k8s_deploy_autonomy.png)"
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_p2p_cn.md:11
 msgid "k8s_master_lite_deploy"
