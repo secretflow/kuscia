@@ -229,6 +229,7 @@ const (
 	DomainDataSourceTypeODPS           = "odps"
 	DomainDataSourceTypePostgreSQL     = "postgresql"
 	DomainDataSourceTypeHive           = "hive"
+	DomainDataSourceTypeDameng         = "dameng"
 	DefaultDomainDataSourceLocalFSPath = "var/storage/data"
 )
 

@@ -72,11 +72,11 @@ func NewServer(ctx context.Context, clients *kubeconfig.KubeClients) (*Server, e
 	s.bfiaServer = bfiaServer
 	s.kusciaServer = kuscia.NewServer(clients)
 	s.controllerConstructions = append(s.controllerConstructions, iccommon.ControllerConstruction{
-		NewControler: s.bfiaServer.NewController,
+		NewController: s.bfiaServer.NewController,
 	})
 	s.controllerConstructions = append(s.controllerConstructions, iccommon.ControllerConstruction{
-		NewControler: s.kusciaServer.NewController,
-		CRDNames:     s.kusciaServer.CRDNames,
+		NewController: s.kusciaServer.NewController,
+		CRDNames:      s.kusciaServer.CRDNames,
 	})
 
 	eventBroadcaster := record.NewBroadcaster()
@@ -122,7 +122,7 @@ func (s *Server) onStartedLeading(ctx context.Context) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 	for _, cc := range s.controllerConstructions {
-		controller := cc.NewControler(ctx, s.kubeClient, s.kusciaClient, s.eventRecorder)
+		controller := cc.NewController(ctx, s.kubeClient, s.kusciaClient, s.eventRecorder)
 		nlog.Infof("Run controller %v ", controller.Name())
 		go func(controller iccommon.IController) {
 			if err := controller.Run(4); err != nil {

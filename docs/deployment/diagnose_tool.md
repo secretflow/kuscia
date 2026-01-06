@@ -47,7 +47,7 @@ Diagnose Config:
 --TestProxyBuffer: true
 --TestRequestBodySize: true, Threshold: 1
 --BidrectionMode: true
-diagnose <alice-bob> network statitsics
+diagnose <alice-bob> network statistics
 diagnose crd config
 Run CONNECTION task
 Run BANDWIDTH task, threshold: 10Mbits/sec
@@ -63,7 +63,7 @@ CRD CONFIG CHECK:
 | bob-alice | cdr  | [PASS] |             |
 +-----------+------+--------+-------------+
 
-NETWORK STATSTICS(alice-bob):
+NETWORK STATISTICS(alice-bob):
 +-------------------+---------------------+-------------+--------+-------------+
 |       NAME        |   DETECTED VALUE    |  THRESHOLD  | RESULT | INFORMATION |
 +-------------------+---------------------+-------------+--------+-------------+
@@ -81,19 +81,19 @@ NETWORK STATSTICS(alice-bob):
 ~~~
 REPORT:
 CRD CONFIG CHECK:
-+-----------+------+--------+----------------------------------+
-|   NAME    | TYPE | RESULT |           INFORMATION            |
-+-----------+------+--------+----------------------------------+
-| alice-bob | cdr  | [FAIL] | cdr alice-bob status             |
-|           |      |        | not succeeded, reason:           |
-|           |      |        | LastUpdateAt=2024-08-14          |
-|           |      |        | 14:52:03 +0800 CST,              |
-|           |      |        | Message=TokenNotGenerate,        |
-|           |      |        | Reason:DestinationIsNotAuthrized |
-| bob-alice | cdr  | [PASS] |                                  |
-+-----------+------+--------+----------------------------------+
++-----------+------+--------+-----------------------------------+
+|   NAME    | TYPE | RESULT |           INFORMATION             |
++-----------+------+--------+-----------------------------------+
+| alice-bob | cdr  | [FAIL] | cdr alice-bob status              |
+|           |      |        | not succeeded, reason:            |
+|           |      |        | LastUpdateAt=2024-08-14           |
+|           |      |        | 14:52:03 +0800 CST,               |
+|           |      |        | Message=TokenNotGenerate,         |
+|           |      |        | Reason:DestinationIsNotAuthorized |
+| bob-alice | cdr  | [PASS] |                                   |
++-----------+------+--------+-----------------------------------+
 
-NETWORK STATSTICS(alice-bob):
+NETWORK STATISTICS(alice-bob):
 +-------------------+---------------------+-------------+-----------+--------------------------------+
 |       NAME        |   DETECTED VALUE    |  THRESHOLD  |  RESULT   |          INFORMATION           |
 +-------------------+---------------------+-------------+-----------+--------------------------------+
@@ -109,13 +109,13 @@ NETWORK STATSTICS(alice-bob):
 ### 报告字段说明
 
 - CRD Config Check: 检查配置的 ClusterDomainRoute 是否有效，若为 FAIL，则说明 CDR 配置有误或节点本身网络不通。
-- NETWORK STATSTICS(alice-bob)：Alice 到 Bob 的请求链路网络指标，包含：
-  - BANDWIDTH：网络带宽指标，默认阈值为 10Mbits/sec，可通过配置 `--speed_thres \<threshold\>` 调整，当带宽检测值（DETECTED VALUE）小于10Mbits/sec 时，结果为 WARNING；
+- NETWORK STATISTICS(alice-bob)：Alice 到 Bob 的请求链路网络指标，包含：
+  - BANDWIDTH：网络带宽指标，默认阈值为 10Mbits/sec，可通过配置 `--speed_thres \<theshold\>` 调整，当带宽检测值（DETECTED VALUE）小于10Mbits/sec 时，结果为 WARNING；
   - CONNECTION：联通性，检测 Kuscia Job 的服务网络联通；
   - PROXY_BUFFER：网关缓冲，结果为FAIL时表示网关存在缓冲，需要联系机构网关关闭网关缓冲；
   - REQUEST_BODY_SIZE：网关请求包体限制，默认阈值为 1MB，可通过配置 `--size_thres \<threshold\>` 调整，当包体限制检测值（DETECTED VALUE）小于 1MB 时，结果为 WARNING；
   - RTT：传输延迟，默认阈值为 50ms，可通过配置 `--rtt_thres \<threshold\>`调整，当传输延迟检测值（DETECTED VALUE）大于 50ms 时，结果为 WARNING。
-- NETWORK STATSTICS(bob-alice): Bob 到 Alice 的请求链路网络指标。
+- NETWORK STATISTICS(bob-alice): Bob 到 Alice 的请求链路网络指标。
 
 ### 其他说明
 

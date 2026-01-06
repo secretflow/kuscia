@@ -50,7 +50,7 @@ function copy_fate_deploy_image() {
   echo -e "Successfully imported image '${FATE_IMAGE}' to container '${KUSCIA_FATE_CTR}'"
 }
 
-function cpoy_fate_adapater_image {
+function copy_fate_adapter_image {
   if docker exec -it ${KUSCIA_FATE_CTR} crictl inspecti ${FATE_ADAPTER_IMAGE} > /dev/null 2>&1 ; then
     echo "has image"
     return 
@@ -81,5 +81,5 @@ function deploy_fate_cluster() {
 }
 
 copy_fate_deploy_image
-cpoy_fate_adapater_image
+copy_fate_adapter_image
 deploy_fate_cluster

@@ -54,5 +54,5 @@ Kuscia支持自动拉取远程的应用镜像（比如：SecretFlow 等），这
 当发现镜像拉取失败时，请确认 配置文件中仓库地址，以及账密相关配置是否正确， 以及参考上文，确保 AppImage 的镜像地址配置正确.
 
 ```
-2024-06-06 13:33:00.534 ERROR framework/pod_workers.go:978 Error syncing pod "ant-test-0_ant(7fd5285b-2a5c-4a75-930a-2908e98c8799)", skipping: failed to "StartContainer" for "test" with ErrImagePull: "faile to pull image \"registry.xxxx.com/secretflow/nginx:v1\" with credentials, detail-> rpc error: code = Unknown desc = failed to pull and unpack image \"registry.xxxx.com/secretflow/nginx:v1\": failed to resolve reference \"registry.xxxx.com/secretflow/nginx:v1\": unexpected status from HEAD request to https://registry.xxxx.com/v2/secretflow/nginx/manifests/v1: 401 Unauthorized"
+2024-06-06 13:33:00.534 ERROR framework/pod_workers.go:978 Error syncing pod "ant-test-0_ant(7fd5285b-2a5c-4a75-930a-2908e98c8799)", skipping: failed to "StartContainer" for "test" with ErrImagePull: "failed to pull image \"registry.xxxx.com/secretflow/nginx:v1\" with credentials, detail-> rpc error: code = Unknown desc = failed to pull and unpack image \"registry.xxxx.com/secretflow/nginx:v1\": failed to resolve reference \"registry.xxxx.com/secretflow/nginx:v1\": unexpected status from HEAD request to https://registry.xxxx.com/v2/secretflow/nginx/manifests/v1: 401 Unauthorized"
 ```

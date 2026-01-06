@@ -291,6 +291,44 @@ func TestListDomainDataSource_InfoErr(t *testing.T) {
 	assert.Equal(t, int32(pberrorcode.ErrorCode_KusciaAPIErrListDomainDataSource), res.Status.Code)
 }
 
+func TestValidateDataSourceType_UnsupportedType(t *testing.T) {
+	err := validateDataSourceType("unsupported_type")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "doesn't support")
+	assert.Contains(t, err.Error(), "unsupported_type")
+}
+
+func TestParseAndNormalizeDataSource_UnsupportedType(t *testing.T) {
+	info := &kusciaapi.DataSourceInfo{
+		Localfs: &kusciaapi.LocalDataSourceInfo{
+			Path: "/test/path",
+		},
+	}
+	uri, err := parseAndNormalizeDataSource("unsupported_type", info)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "not support")
+	assert.Contains(t, err.Error(), "unsupported_type")
+	assert.Empty(t, uri)
+}
+
+func TestCreateDomainDataSource_UnsupportedType(t *testing.T) {
+	conf := makeDomainDataSourceServiceConfig(t)
+	dsService := makeDomainDataSourceService(t, conf)
+	res := dsService.CreateDomainDataSource(context.Background(), &kusciaapi.CreateDomainDataSourceRequest{
+		Header:       nil,
+		DomainId:     mockDomainID,
+		DatasourceId: "ds-1",
+		Type:         "unsupported_type",
+		Info: &kusciaapi.DataSourceInfo{
+			Localfs: &kusciaapi.LocalDataSourceInfo{
+				Path: "./data",
+			},
+		},
+	})
+	assert.NotEqual(t, int32(0), res.Status.Code)
+	assert.Contains(t, res.Status.Message, "doesn't support")
+}
+
 func makeDomainDataSourceService(t *testing.T, conf *config.KusciaAPIConfig) IDomainDataSourceService {
 	return NewDomainDataSourceService(conf, makeConfigService(t))
 }
