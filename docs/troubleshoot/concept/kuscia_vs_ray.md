@@ -5,7 +5,7 @@
 ## 写在前面
 
 Kuscia 和 Ray 通常被误认为只能二选一，其实 Kuscia 与 Ray 所在的分层不同，彼此不同但相互补充。如下图所示，Ray 位于引擎层作为 SecretFlow 底层的函数级调度框架。Kuscia 位于框架层致力于解决隐私计算生产落地过程中的共性问题[详见 Kuscia 概述文档](../../reference/overview.md)。
-![Kuscia_Layer](../../imgs/en_images/kuscia_layer.png)
+![Kuscia_Layer](../../imgs/kuscia_layer.png)
 
 ### SecretFlow 使用 Ray 做了什么
 
