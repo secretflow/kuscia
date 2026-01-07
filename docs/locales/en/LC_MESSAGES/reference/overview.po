@@ -203,8 +203,8 @@ msgstr ""
 "SecretFlow is derived from the experience of Ant Group's internal use of privacy computing technology to support business development. In the past, the implementation of privacy computing technology in actual business processes has gone through three periods: the manual task initiation period, the Coordinator-initiated task period, and the Kuscia orchestrated task period."
 
 #: ../../reference/overview.md:52
-msgid "Kuscia Evolution"
-msgstr "Kuscia Evolution"
+msgid "![Kuscia Evolution](../imgs/kuscia_evolution.png)"
+msgstr "![Kuscia Evolution](../imgs/en_images/kuscia_evolution.png)"
 
 #: ../../reference/overview.md:54
 msgid "手动拉起任务时期"
@@ -261,8 +261,8 @@ msgid "引擎层：完成核心的隐私计算任务，如 PSI 求交，PIR，�
 msgstr "**Engine Layer:** Completes core privacy computing tasks, such as PSI intersection, PIR, privacy-preserving feature processing, LR XGB model training, model prediction, etc."
 
 #: ../../reference/overview.md:71
-msgid "Kuscia Layer"
-msgstr "Kuscia Layer"
+msgid "![Kuscia Layer](../imgs/kuscia_layer.png)"
+msgstr "![Kuscia Layer](../imgs/en_images/kuscia_layer.png)"
 
 #: ../../reference/overview.md:73
 msgid ""
