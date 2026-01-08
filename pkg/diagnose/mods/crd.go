@@ -97,7 +97,7 @@ func (m *CRDMod) ValidateClusterDomainRoute(ctx context.Context, item *CRDItem) 
 		return m.OnFailure(item, err.Error())
 	}
 
-	// TODO: check certifate?
+	// TODO: check certificate?
 	m.OnSuccess(item)
 	return nil
 }

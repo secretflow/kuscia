@@ -110,11 +110,11 @@ NETWORK STATISTICS(alice-bob):
 
 - CRD Config Check: 检查配置的 ClusterDomainRoute 是否有效，若为 FAIL，则说明 CDR 配置有误或节点本身网络不通。
 - NETWORK STATISTICS(alice-bob)：Alice 到 Bob 的请求链路网络指标，包含：
-  - BANDWIDTH：网络带宽指标，默认阈值为 10Mbits/sec，可通过配置 `--speed_thres \<theshold\>` 调整，当带宽检测值（DETECTED VALUE）小于10Mbits/sec 时，结果为 WARNING；
+  - BANDWIDTH：网络带宽指标，默认阈值为 10Mbits/sec，可通过配置 `--speed_threshold` 调整，当带宽检测值（DETECTED VALUE）小于10Mbits/sec 时，结果为 WARNING；
   - CONNECTION：联通性，检测 Kuscia Job 的服务网络联通；
   - PROXY_BUFFER：网关缓冲，结果为FAIL时表示网关存在缓冲，需要联系机构网关关闭网关缓冲；
-  - REQUEST_BODY_SIZE：网关请求包体限制，默认阈值为 1MB，可通过配置 `--size_thres \<threshold\>` 调整，当包体限制检测值（DETECTED VALUE）小于 1MB 时，结果为 WARNING；
-  - RTT：传输延迟，默认阈值为 50ms，可通过配置 `--rtt_thres \<threshold\>`调整，当传输延迟检测值（DETECTED VALUE）大于 50ms 时，结果为 WARNING。
+  - REQUEST_BODY_SIZE：网关请求包体限制，默认阈值为 1MB，可通过配置 `--size_threshold` 调整，当包体限制检测值（DETECTED VALUE）小于 1MB 时，结果为 WARNING；
+  - RTT：传输延迟，默认阈值为 50ms，可通过配置 `--rtt_threshold`调整，当传输延迟检测值（DETECTED VALUE）大于 50ms 时，结果为 WARNING。
 - NETWORK STATISTICS(bob-alice): Bob 到 Alice 的请求链路网络指标。
 
 ### 其他说明

@@ -563,7 +563,7 @@ msgid "state"
 msgstr ""
 
 #: ../../reference/apis/domain_cn.md
-msgid "部署令牌状态 used, unsed"
+msgid "部署令牌状态 used, unused"
 msgstr "Deployment Token Status: Used, Unused."
 
 #: ../../reference/apis/domain_cn.md:427

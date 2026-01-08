@@ -211,8 +211,8 @@ func (gnp *GenericNodeProvider) refreshNodeConditions(ctx context.Context, st *v
 	}
 
 	var kernelParamsChanged bool
-	kernalParamOK, kerunalParamMsg := gnp.refreshKernelParamsCondition()
-	if kernalParamOK {
+	kernelParamOK, kerunalParamMsg := gnp.refreshKernelParamsCondition()
+	if kernelParamOK {
 		st.Conditions, kernelParamsChanged =
 			nodeutils.AddOrUpdateNodeCondition(st.Conditions, v1.NodeCondition{
 				Type:    "Kernel-Params",
