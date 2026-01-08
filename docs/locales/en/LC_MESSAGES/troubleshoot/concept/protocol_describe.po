@@ -80,7 +80,7 @@ msgid ""
 " master 节点配置为 TLS 协议，lite 节点配置为 NOTLS 协议，即 lite 节点之间使用 HTTP 协议进行通信，lite "
 "访问 master 使用 HTTPS 协议进行通信，如下图所示。 "
 "![default_protocol](../../imgs/default_protocol.png)"
-msgstr "In the [Peer-to-Peer Mode Deployment](../../deployment/Docker_deployment_kuscia/deploy_p2p_cn.md) documentation, the default node configuration is TLS protocol, meaning nodes communicate with each other using HTTPS protocol. In the [Centralized Mode Deployment](../../deployment/Docker_deployment_kuscia/deploy_master_lite_cn.md) documentation, the master node is configured with TLS protocol by default, while lite nodes are configured with NOTLS protocol. This means lite nodes communicate with each other using HTTP protocol, and lite nodes access the master using HTTPS protocol, as shown in the following figure. ![default_protocol](../../imgs/default_protocol.png)"
+msgstr "In the [Peer-to-Peer Mode Deployment](../../deployment/Docker_deployment_kuscia/deploy_p2p_cn.md) documentation, the default node configuration is TLS protocol, meaning nodes communicate with each other using HTTPS protocol. In the [Centralized Mode Deployment](../../deployment/Docker_deployment_kuscia/deploy_master_lite_cn.md) documentation, the master node is configured with TLS protocol by default, while lite nodes are configured with NOTLS protocol. This means lite nodes communicate with each other using HTTP protocol, and lite nodes access the master using HTTPS protocol, as shown in the following figure. ![default_protocol](../../imgs/en_images/default_protocol.png)"
 
 #: ../../troubleshoot/concept/protocol_describe.md:55
 msgid "default_protocol"

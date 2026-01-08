@@ -40,6 +40,7 @@ msgid ""
 "![Kuscia_Layer](../../imgs/kuscia_layer.png)"
 msgstr ""
 "Kuscia and Ray are often mistakenly thought to be mutually exclusive. However, they operate at different layers and complement each other. Ray is positioned at the engine layer, serving as a function-level scheduling framework for SecretFlow. Kuscia, on the other hand, is at the framework layer, addressing common problems in the production deployment of privacy computing. [See Kuscia Overview Document for details](../../reference/overview.md)."
+"![Kuscia_Layer](../../imgs/en_images/kuscia_layer.png)"
 
 #: ../../troubleshoot/concept/kuscia_vs_ray.md:7
 msgid "Kuscia_Layer"
@@ -65,7 +66,7 @@ msgstr ""
 "Unlike traditional applications, privacy computing typically involves 2 or more parties. The conventional approach requires each participant to write separate logic based on their perspective. At runtime, the program then executes the logic corresponding to its role."
 
 "So, can we develop privacy computing applications like traditional ones? As shown in the figure below, SecretFlow chose Ray to achieve this goal. This allows users to develop privacy computing applications from a god's-eye view."
-"![secretflow_developer_view](../../imgs/sf_dev_view.png)"
+"![secretflow_developer_view](../../imgs/en_images/sf_dev_view.png)"
 
 #: ../../troubleshoot/concept/kuscia_vs_ray.md:12
 msgid "secretflow_developer_view"

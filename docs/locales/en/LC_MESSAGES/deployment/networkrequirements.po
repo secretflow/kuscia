@@ -162,7 +162,7 @@ msgstr "Tips: The HTTP/HTTPS protocols, IP addresses, and ports used above and i
 
 #: ../../deployment/networkrequirements.md:50
 msgid "![network](../imgs/network.png)"
-msgstr "![network](../imgs/network.png)"
+msgstr "![network](../imgs/en_images/network.png)"
 
 #: ../../deployment/networkrequirements.md:50
 msgid "network"
