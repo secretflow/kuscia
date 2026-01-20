@@ -90,7 +90,6 @@ dataMesh:
         - "hive"
         - "dameng"                    # dameng database
         - "oracle"                    # oracle database
-        - "oracle"                    # oracle database
 # Note: Currently only a single odps data source configuration is supported. If two odps configurations are defined here, the latter one will override the previous one.
 #   - endpoint: "example-dataproxy-grpc:8024"
 #     dataSourceTypes:
