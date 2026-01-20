@@ -650,7 +650,8 @@ function dataproxy_config() {
       dataSourceTypes:
         - "odps"
         - "hive"
-        - "dameng"'
+        - "dameng"
+        - "oracle"'
   if ! grep -q "${data_proxy_config}" "${kuscia_config_file}"; then
      echo "${data_proxy_config}" >> "${kuscia_config_file}"
   fi

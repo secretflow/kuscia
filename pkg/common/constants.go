@@ -230,6 +230,7 @@ const (
 	DomainDataSourceTypePostgreSQL     = "postgresql"
 	DomainDataSourceTypeHive           = "hive"
 	DomainDataSourceTypeDameng         = "dameng"
+	DomainDataSourceTypeOracle         = "oracle"
 	DefaultDomainDataSourceLocalFSPath = "var/storage/data"
 )
 

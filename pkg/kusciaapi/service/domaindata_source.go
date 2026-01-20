@@ -493,8 +493,9 @@ func validateDataSourceType(t string) error {
 		t != common.DomainDataSourceTypeODPS &&
 		t != common.DomainDataSourceTypePostgreSQL &&
 		t != common.DomainDataSourceTypeHive &&
-		t != common.DomainDataSourceTypeDameng {
-		return fmt.Errorf("domain data source type %q doesn't support, the available types are [localfs,oss,mysql,odps,postgresql,hive,dameng]", t)
+		t != common.DomainDataSourceTypeDameng &&
+		t != common.DomainDataSourceTypeOracle {
+		return fmt.Errorf("domain data source type %q doesn't support, the available types are [localfs,oss,mysql,odps,postgresql,hive,dameng,oracle]", t)
 	}
 	return nil
 }
@@ -596,7 +597,7 @@ func decodeDataSourceInfo(sourceType string, connectionStr string) (*kusciaapi.D
 	case common.DomainDataSourceTypeOSS:
 		dsInfo.Oss = &kusciaapi.OssDataSourceInfo{}
 		err = json.Unmarshal(connectionBytes, dsInfo.Oss)
-	case common.DomainDataSourceTypeMysql, common.DomainDataSourceTypePostgreSQL, common.DomainDataSourceTypeHive, common.DomainDataSourceTypeDameng:
+	case common.DomainDataSourceTypeMysql, common.DomainDataSourceTypePostgreSQL, common.DomainDataSourceTypeHive, common.DomainDataSourceTypeDameng, common.DomainDataSourceTypeOracle:
 		dsInfo.Database = &kusciaapi.DatabaseDataSourceInfo{}
 		err = json.Unmarshal(connectionBytes, dsInfo.Database)
 	case common.DomainDataSourceTypeLocalFS:
@@ -650,7 +651,7 @@ func parseAndNormalizeDataSource(sourceType string, info *kusciaapi.DataSourceIn
 		// truncate slash
 		info.Localfs.Path = strings.TrimRight(info.Localfs.Path, string(filepath.Separator))
 		uri = info.Localfs.Path
-	case common.DomainDataSourceTypeMysql, common.DomainDataSourceTypePostgreSQL, common.DomainDataSourceTypeHive, common.DomainDataSourceTypeDameng:
+	case common.DomainDataSourceTypeMysql, common.DomainDataSourceTypePostgreSQL, common.DomainDataSourceTypeHive, common.DomainDataSourceTypeDameng, common.DomainDataSourceTypeOracle:
 		if isInvalid(info.Database == nil) {
 			return
 		}
@@ -661,7 +662,7 @@ func parseAndNormalizeDataSource(sourceType string, info *kusciaapi.DataSourceIn
 		}
 		uri = info.Odps.Endpoint + "/" + info.Odps.Project
 	default:
-		err = fmt.Errorf("datasource type:%q not support, only support [localfs,oss,mysql,odps,postgresql,hive,dameng]", sourceType)
+		err = fmt.Errorf("datasource type:%q not support, only support [localfs,oss,mysql,odps,postgresql,hive,dameng,oracle]", sourceType)
 		nlog.Error(err)
 		return
 	}
@@ -703,6 +704,7 @@ func validateDataSourceInfo(sourceType string, info *kusciaapi.DataSourceInfo) e
 	case common.DomainDataSourceTypePostgreSQL:
 	case common.DomainDataSourceTypeHive:
 	case common.DomainDataSourceTypeDameng:
+	case common.DomainDataSourceTypeOracle:
 		if info.Database == nil {
 			return fmt.Errorf("%v info is nil", sourceType)
 		}

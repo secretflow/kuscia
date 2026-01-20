@@ -222,6 +222,7 @@ func parseDataSourceURI(sourceType string, info *datamesh.DataSourceInfo) (uri s
 	case common.DomainDataSourceTypePostgreSQL:
 	case common.DomainDataSourceTypeHive:
 	case common.DomainDataSourceTypeDameng:
+	case common.DomainDataSourceTypeOracle:
 		if isInvalid(info.Database == nil) {
 			return
 		}
@@ -232,7 +233,7 @@ func parseDataSourceURI(sourceType string, info *datamesh.DataSourceInfo) (uri s
 		}
 		uri = info.Odps.Endpoint + "/" + info.Odps.Project
 	default:
-		err = fmt.Errorf("datasource type:%q not support, only support [localfs,oss,mysql,odps,postgresql,hive,dameng]", sourceType)
+		err = fmt.Errorf("datasource type:%q not support, only support [localfs,oss,mysql,odps,postgresql,hive,dameng,oracle]", sourceType)
 		nlog.Error(err)
 		return
 	}
@@ -287,6 +288,7 @@ func decodeDataSourceInfo(sourceType string, connectionStr string) (*datamesh.Da
 	case common.DomainDataSourceTypePostgreSQL:
 	case common.DomainDataSourceTypeHive:
 	case common.DomainDataSourceTypeDameng:
+	case common.DomainDataSourceTypeOracle:
 		dsInfo.Database = &datamesh.DatabaseDataSourceInfo{}
 		err = json.Unmarshal(connectionBytes, dsInfo.Database)
 	case common.DomainDataSourceTypeLocalFS:
