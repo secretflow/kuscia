@@ -1,5 +1,5 @@
 sphinx~=8.0
-linkify-it-py~=2.0
+linkify-it-py~=2.1
 myst-parser~=4.0
 sphinx-intl~=2.3
 sphinxcontrib-mermaid~=1.0
