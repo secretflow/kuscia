@@ -45,7 +45,7 @@ require (
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.22.0
-	github.com/samber/lo v1.47.0
+	github.com/samber/lo v1.53.0
 	github.com/secretflow/kuscia-envoy v0.0.0-20240402083426-b0884d002f48
 	github.com/shirou/gopsutil/v3 v3.22.6
 	github.com/spf13/cobra v1.8.1
