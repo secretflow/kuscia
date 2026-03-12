@@ -13,7 +13,7 @@ require (
 	github.com/aws/aws-sdk-go v1.55.7
 	github.com/casbin/casbin/v2 v2.77.2
 	github.com/containerd/cgroups/v3 v3.0.3
-	github.com/coredns/caddy v1.1.2-0.20241029205200-8de985351a98
+	github.com/coredns/caddy v1.1.4
 	github.com/coredns/coredns v1.12.2
 	github.com/docker/distribution v2.8.2+incompatible
 	github.com/docker/go-units v0.5.0
