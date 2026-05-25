@@ -1,6 +1,6 @@
 module github.com/secretflow/kuscia
 
-go 1.24.7
+go 1.25.0
 
 godebug default=go1.24
 
@@ -56,8 +56,8 @@ require (
 	gitlab.com/jonas.jasas/condchan v0.0.0-20190210165812-36637ad2b5bc
 	go.uber.org/atomic v1.11.0
 	go.uber.org/zap v1.27.0
-	golang.org/x/net v0.47.0
-	golang.org/x/sys v0.38.0
+	golang.org/x/net v0.55.0
+	golang.org/x/sys v0.45.0
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250512202823-5a2f75b736a9
 	google.golang.org/grpc v1.72.2
 	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.3.0
@@ -261,16 +261,16 @@ require (
 	go.uber.org/mock v0.5.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/arch v0.3.0 // indirect
-	golang.org/x/crypto v0.44.0 // indirect
+	golang.org/x/crypto v0.51.0 // indirect
 	golang.org/x/exp v0.0.0-20250210185358-939b2ce775ac // indirect
-	golang.org/x/mod v0.29.0 // indirect
+	golang.org/x/mod v0.35.0 // indirect
 	golang.org/x/oauth2 v0.30.0 // indirect
-	golang.org/x/sync v0.18.0 // indirect
-	golang.org/x/telemetry v0.0.0-20251008203120-078029d740a8 // indirect
-	golang.org/x/term v0.37.0 // indirect
-	golang.org/x/text v0.31.0 // indirect
+	golang.org/x/sync v0.20.0 // indirect
+	golang.org/x/telemetry v0.0.0-20260409153401-be6f6cb8b1fa // indirect
+	golang.org/x/term v0.43.0 // indirect
+	golang.org/x/text v0.37.0 // indirect
 	golang.org/x/time v0.11.0 // indirect
-	golang.org/x/tools v0.38.0 // indirect
+	golang.org/x/tools v0.44.0 // indirect
 	golang.org/x/tools/go/packages/packagestest v0.1.1-deprecated // indirect
 	golang.org/x/xerrors v0.0.0-20231012003039-104605ab7028 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20250505200425-f936aa4a68b2 // indirect
