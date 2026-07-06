@@ -1,6 +1,6 @@
 module github.com/secretflow/kuscia
 
-go 1.24.7
+go 1.25.0
 
 godebug default=go1.24
 
@@ -57,7 +57,7 @@ require (
 	go.uber.org/atomic v1.11.0
 	go.uber.org/zap v1.27.0
 	golang.org/x/net v0.47.0
-	golang.org/x/sys v0.38.0
+	golang.org/x/sys v0.46.0
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250512202823-5a2f75b736a9
 	google.golang.org/grpc v1.72.2
 	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.3.0
