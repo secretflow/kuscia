@@ -55,7 +55,7 @@ require (
 	github.com/tidwall/match v1.1.1
 	gitlab.com/jonas.jasas/condchan v0.0.0-20190210165812-36637ad2b5bc
 	go.uber.org/atomic v1.11.0
-	go.uber.org/zap v1.27.0
+	go.uber.org/zap v1.28.0
 	golang.org/x/net v0.47.0
 	golang.org/x/sys v0.38.0
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250512202823-5a2f75b736a9
