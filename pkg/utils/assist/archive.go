@@ -138,7 +138,7 @@ func Untar(dst string, isGzip bool, adjustLink bool, r io.Reader, skipUnNormalFi
 
 		// Clean and validate the file path to prevent directory traversal
 		cleanName := filepath.Clean(header.Name)
-		if strings.Contains(cleanName, "..") {
+		if cleanName == ".." || strings.HasPrefix(cleanName, ".."+string(filepath.Separator)) {
 			return fmt.Errorf("invalid file path in tar archive: %s contains directory traversal attempt", header.Name)
 		}
 
@@ -146,7 +146,7 @@ func Untar(dst string, isGzip bool, adjustLink bool, r io.Reader, skipUnNormalFi
 
 		// Ensure the target path is within the destination directory
 		relPath, err := filepath.Rel(dst, target)
-		if err != nil || strings.HasPrefix(relPath, "..") {
+		if err != nil || relPath == ".." || strings.HasPrefix(relPath, ".."+string(filepath.Separator)) {
 			return fmt.Errorf("invalid file path in tar archive: %s escapes destination directory", header.Name)
 		}
 
